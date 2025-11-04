@@ -106,11 +106,12 @@ def embeddings_y_taggrams_VGG(pesos, audio):
     return embeddings, taggrams
 
 
-#embeddings, taggrams = embeddings_y_taggrams_VGG(MSD_W_VGG, './audio/1.mp3')
+if __name__ == "__main__":
+    #embeddings, taggrams = embeddings_y_taggrams_VGG(MSD_W_VGG, './audio/1.mp3')
 
-embeddings, taggrams = embeddings_y_taggrams_MusiCNN(MSD_W_MUSICNN, './audio/1.mp3')
-#embeddings, taggrams = embeddings_y_taggrams_MusiCNN(MTAT_W_MUSICNN, './audio/1.mp3')
+    embeddings, taggrams = embeddings_y_taggrams_MusiCNN(MSD_W_MUSICNN, './audio/1.mp3')
+    #embeddings, taggrams = embeddings_y_taggrams_MusiCNN(MTAT_W_MUSICNN, './audio/1.mp3')
 
-if embeddings is not None:
-    print(f"Dimensiones del Embedding (Penúltima Capa): {embeddings.shape}")
-    print(f"Dimensiones del Taggram (Predicción de Tags): {taggrams.shape}")
+    if embeddings is not None:
+        print(f"Dimensiones del Embedding (Penúltima Capa): {embeddings.shape}")
+        print(f"Dimensiones del Taggram (Predicción de Tags): {taggrams.shape}")

@@ -1,0 +1,10 @@
+.sidepane{
+    display: flex;
+    flex-direction: column;
+    min-width: 20%;
+    margin: 20px;
+}
+.item{
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
