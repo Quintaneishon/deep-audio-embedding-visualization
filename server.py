@@ -1,6 +1,7 @@
 from flask import Flask, request
 from main import embeddings_y_taggrams_MusiCNN, embeddings_y_taggrams_VGG, MSD_W_MUSICNN, MTAT_W_MUSICNN,MSD_W_VGG
 from flask_cors import CORS
+import os
 
 AUDIO_ROUTE = './audio/'
 
@@ -10,6 +11,17 @@ CORS(app)
 @app.route("/")
 def hello_world():
     return "<p>Hello, World!</p>"
+
+@app.route("/audios")
+def listar_audios():
+    carpeta = "./audio"
+
+    archivos = [
+        f for f in os.listdir(carpeta)
+        if os.path.isfile(os.path.join(carpeta, f))
+    ]
+
+    return archivos
 
 @app.route('/embedding')
 def embedding():

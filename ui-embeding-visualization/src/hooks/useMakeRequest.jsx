@@ -16,17 +16,24 @@ export const useMakeRequest = () => {
             reqPista = 'pista=' + pista;
         }
         let params = ''
-        if(reqRed!==''&&reqDataset!==''&&reqPista!==''){
-            params = '?'+reqRed+','+reqDataset+','+reqPista
+        if (reqRed !== '' && reqDataset !== '' && reqPista !== '') {
+            params = '?' + reqRed + ',' + reqDataset + ',' + reqPista
         }
 
-        const data = await fetch(URL + '/embedding'+params);
+        const data = await fetch(URL + '/embedding' + params);
         const eyt = await data.json()
         console.log(eyt)
         return eyt;
     }
 
+    const obtenerAudios = async () => {
+        const data = await fetch(URL + '/audios');
+        const audios = await data.json()
+        return audios
+    }
+
     return {
-        getEmbeddingsTaggrams
+        getEmbeddingsTaggrams,
+        obtenerAudios
     }
 }
