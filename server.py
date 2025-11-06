@@ -58,5 +58,6 @@ def representacion():
         metodo = 'umap'
     coords=proyectar_embeddings(embeddings, metodo=metodo)
     return {
-            'representacion_'+metodo+'_'+red+"_"+dataset+'_'+pista : coords.tolist()
+            'representacion_'+metodo+'_'+red+"_"+dataset+'_'+pista : coords.tolist(),
+            'taggrams_'+metodo+'_'+red+"_"+dataset+'_'+pista : taggrams.tolist()
     } 

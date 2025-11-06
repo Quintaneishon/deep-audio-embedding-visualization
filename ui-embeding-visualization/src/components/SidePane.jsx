@@ -1,8 +1,9 @@
 import Form from 'react-bootstrap/Form';
 import '../styles/sidepane.css';
 import Button from 'react-bootstrap/Button';
+import ProgressBar from 'react-bootstrap/ProgressBar';
 
-export const SidePane = ({ listaTags, tags, setTags, canciones, setCanciones, listaCanciones, cargarDatos }) => {
+export const SidePane = ({ listaTags, tags, setTags, canciones, setCanciones, listaCanciones, cargarDatos, progreso }) => {
 
     const handleTagsChange = (e) => {
         const selectedValues = Array.from(e.target.selectedOptions, (option) => option.value);
@@ -15,7 +16,7 @@ export const SidePane = ({ listaTags, tags, setTags, canciones, setCanciones, li
         setCanciones(selectedValues);
         console.log('Canciones seleccionados:', selectedValues);
     };
-
+    console.log(progreso)
     return (
         <div className='sidepane'>
             <div className='item'>
@@ -42,7 +43,13 @@ export const SidePane = ({ listaTags, tags, setTags, canciones, setCanciones, li
                     {listaCanciones.map((lCna, idx) => <option value={lCna} key={idx}>{lCna}</option>)}
                 </Form.Select>
             </div>
-            <Button onClick={cargarDatos}>Aplicar</Button>
+            {progreso != 0 && progreso != 100 &&
+                <div>
+                    <p>Cargando...</p>
+                    <ProgressBar now={progreso} />
+                </div>
+            }
+            {(progreso == 0 || progreso == 100) && <Button style={{ marginTop: '10px' }} onClick={cargarDatos}>Aplicar</Button>}
         </div>
     );
 };
