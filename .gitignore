@@ -1,2 +1,261 @@
+# ============================================
+# Python
+# ============================================
+
+# Byte-compiled / optimized / DLL files
 __pycache__/
-otros/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# ============================================
+# Project Specific - Generated Cache Files
+# ============================================
+
+# Cache directory (all generated files)
+cache/
+cache/*.db
+cache/embeddings/
+cache/projections/
+cache/taggrams/
+cache/centroids/
+cache/similarities/
+
+# ============================================
+# Model Weights (Optional - Uncomment if large)
+# ============================================
+
+# Uncomment these lines if you don't want to track model weights
+# due to their large size. You'll need to download them separately.
+# ML/pesos/
+# ML/pesos/**/*.pth
+# ML/pesos/**/*.pt
+# *.pth
+# *.pt
+
+# ============================================
+# Audio Files (Optional - Uncomment if needed)
+# ============================================
+
+# Uncomment if you don't want to track audio files in git
+# audio/
+# audio/*.mp3
+# audio/*.wav
+# audio/*.flac
+# audio/*.ogg
+# audio/*.m4a
+
+# ============================================
+# Node.js / React Frontend
+# ============================================
+
+# Dependencies
+node_modules/
+ui-embeding-visualization/node_modules/
+
+# Production build
+ui-embeding-visualization/build/
+
+# Testing
+ui-embeding-visualization/coverage/
+
+# Misc
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ============================================
+# Operating System Files
+# ============================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ============================================
+# IDE and Editor Files
+# ============================================
+
+# JetBrains IDEs (PyCharm, WebStorm, etc.)
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# ============================================
+# Logs and Temporary Files
+# ============================================
+
+*.log
+logs/
+*.tmp
+*.temp
+tmp/
+temp/
+
+# ============================================
+# Environment Variables
+# ============================================
+
+.env
+.env.local
+.env.*.local
+*.env
+
+# ============================================
+# Database Files (Development)
+# ============================================
+
+*.db
+*.sqlite
+*.sqlite3
+
+# ============================================
+# Backup Files
+# ============================================
+
+*.bak
+*.backup
+*.old
+*~
+
+# ============================================
+# Compressed Archives
+# ============================================
+
+*.zip
+*.tar.gz
+*.rar
+*.7z
