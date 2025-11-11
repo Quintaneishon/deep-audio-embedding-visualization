@@ -259,3 +259,6 @@ temp/
 *.tar.gz
 *.rar
 *.7z
+
+/audio
+selected_songs.csv
