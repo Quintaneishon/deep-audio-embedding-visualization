@@ -62,6 +62,20 @@ class Res_2d(nn.Module):
         return out
 
 
+class Res_2d_simple(nn.Module):
+    """Simplified residual block with single convolution"""
+    def __init__(self, input_channels, output_channels, shape=3, stride=2):
+        super(Res_2d_simple, self).__init__()
+        # Single convolution block
+        self.conv = nn.Conv2d(input_channels, output_channels, shape, stride=stride, padding=shape//2)
+        self.bn = nn.BatchNorm2d(output_channels)
+        self.relu = nn.ReLU()
+
+    def forward(self, x):
+        out = self.relu(self.bn(self.conv(x)))
+        return out
+
+
 class Res_2d_mp(nn.Module):
     def __init__(self, input_channels, output_channels, pooling=2):
         super(Res_2d_mp, self).__init__()

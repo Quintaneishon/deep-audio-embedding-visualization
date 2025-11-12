@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torchaudio
 
-from modules import Res_2d
+from modules import Res_2d, Res_2d_simple
 
 class VGG_Res(nn.Module):
     def __init__(self,
@@ -11,8 +11,12 @@ class VGG_Res(nn.Module):
                  f_min=0.0,
                  f_max=8000.0,
                  n_mels=128,
-                 n_class=50):
+                 n_class=50,
+                 use_simple_res=False):
         super(VGG_Res, self).__init__()
+        
+        # Choose the appropriate residual block based on architecture type
+        ResBlock = Res_2d_simple if use_simple_res else Res_2d
 
         self.spec = torchaudio.transforms.MelSpectrogram(sample_rate=sample_rate,
                                                         n_fft=n_fft,
@@ -22,13 +26,13 @@ class VGG_Res(nn.Module):
         self.to_db = torchaudio.transforms.AmplitudeToDB()
         self.spec_bn = nn.BatchNorm2d(1)
 
-        self.layer1 = Res_2d(1, n_channels, stride=2)
-        self.layer2 = Res_2d(n_channels, n_channels, stride=2)
-        self.layer3 = Res_2d(n_channels, n_channels*2, stride=2)
-        self.layer4 = Res_2d(n_channels*2, n_channels*2, stride=2)
-        self.layer5 = Res_2d(n_channels*2, n_channels*2, stride=2)
-        self.layer6 = Res_2d(n_channels*2, n_channels*2, stride=2)
-        self.layer7 = Res_2d(n_channels*2, n_channels*4, stride=2)
+        self.layer1 = ResBlock(1, n_channels, stride=2)
+        self.layer2 = ResBlock(n_channels, n_channels, stride=2)
+        self.layer3 = ResBlock(n_channels, n_channels*2, stride=2)
+        self.layer4 = ResBlock(n_channels*2, n_channels*2, stride=2)
+        self.layer5 = ResBlock(n_channels*2, n_channels*2, stride=2)
+        self.layer6 = ResBlock(n_channels*2, n_channels*2, stride=2)
+        self.layer7 = ResBlock(n_channels*2, n_channels*4, stride=2)
 
         self.dense1 = nn.Linear(n_channels*4, n_channels*4)
         self.bn = nn.BatchNorm1d(n_channels*4)

@@ -1,0 +1,8 @@
+#!/mnt/b6ae129f-d10f-42f6-b488-51e80af70cd1/Ajitzi/deep-audio-embedding-visualization/.venv/bin/python
+# -*- coding: UTF-8 -*-
+from __future__ import print_function, division, absolute_import
+
+from numba.misc.numba_entry import main
+
+if __name__ == "__main__":
+    main()
