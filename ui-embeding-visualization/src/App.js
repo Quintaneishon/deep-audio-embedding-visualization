@@ -16,7 +16,7 @@ function App() {
   // Selector Grafica 1
   const [arquitectura1, setArquitectura1] = useState('MusiCNN');
   const [dataset1, setDataset1] = useState('MSD');
-  const [tipoGrafica1, setTipoGrafica1] = useState('PCA')
+  const [tipoGrafica1, setTipoGrafica1] = useState('umap')
   const [graf1, setGraf1] = useState([]);
   const [taggrams1, setTaggrams1] = useState([])
 
@@ -24,85 +24,68 @@ function App() {
   // Selector Grafica 2
   const [arquitectura2, setArquitectura2] = useState('MusiCNN');
   const [dataset2, setDataset2] = useState('MSD');
-  const [tipoGrafica2, setTipoGrafica2] = useState('PCA')
+  const [tipoGrafica2, setTipoGrafica2] = useState('tsne')
   const [graf2, setGraf2] = useState([]);
   const [taggrams2, setTaggrams2] = useState([])
 
-  const { obtenerAudios, obtenerRepresentacion, obtenerTags } = useMakeRequest();
+  const { obtenerAudios, obtenerEmbeddings, obtenerTaggrams, obtenerTags } = useMakeRequest();
 
 
   const cargarDatos = async () => {
     console.log("Ejecutando request...", arquitectura1, dataset1, tipoGrafica1);
+    setProgreso(25);
 
-    // --- PRIMERA GRÁFICA ---
-    let primeraGrafica = [];
-    let todosTaggrams1 = [];
-setProgreso(25)
-    for (let can of canciones) {
-      console.log("Obteniendo para", can);
-      const resp = await obtenerRepresentacion(arquitectura1, dataset1, can, tipoGrafica1);
+    // ======== PRIMERA GRÁFICA ========
+    const emb1 = await obtenerEmbeddings(arquitectura1, dataset1, tipoGrafica1, 2);
+    const tg1 = await obtenerTaggrams(arquitectura1, dataset1, tipoGrafica1, 2);
 
-      const keys = Object.keys(resp);
-      const keyEmb = keys.find(k => k.includes("representacion"));
-      const keyTags = keys.find(k => k.includes("taggrams"));
+    const coords1 = emb1.data;      // [[x,y], [x,y], ...]
+    const tags1 = tg1.data;         // [[t1..tn], [t1..tn], ...]
 
-      const coords = resp[keyEmb];
-      const tg = resp[keyTags];
+    const x1 = coords1.map(p => p[0]);
+    const y1 = coords1.map(p => p[1]);
 
-      todosTaggrams1 = todosTaggrams1.concat(tg);
-
-      const x = coords.map(p => p[0]);
-      const y = coords.map(p => p[1]);
-
-      primeraGrafica.push({
-        x,
-        y,
+    setGraf1([
+      {
+        x: x1,
+        y: y1,
         type: "scatter",
         mode: "markers",
-        name: can,
-        taggrams: tg,
-      });
-    }
+        name: "Embeddings",
+        taggrams: tags1
+      }
+    ]);
 
-    setGraf1(primeraGrafica);
-    setTaggrams1(todosTaggrams1);
-    setProgreso(50)
+    setTaggrams1(tags1);
+    setProgreso(50);
 
-    // --- SEGUNDA GRÁFICA ---
+    // ======== SEGUNDA GRÁFICA ========
     console.log("Ejecutando request...", arquitectura2, dataset2, tipoGrafica2);
 
-    let segundaGrafica = [];
-    let todosTaggrams2 = [];
+    const emb2 = await obtenerEmbeddings(arquitectura2, dataset2, tipoGrafica2, 2);
+    const tg2 = await obtenerTaggrams(arquitectura2, dataset2, tipoGrafica2, 2);
 
-    for (let can of canciones) {
-      console.log("Obteniendo para", can);
-      const resp = await obtenerRepresentacion(arquitectura2, dataset2, can, tipoGrafica2);
+    const coords2 = emb2.data;
+    const tags2 = tg2.data;
 
-      const keys = Object.keys(resp);
-      const keyEmb = keys.find(k => k.includes("representacion"));
-      const keyTags = keys.find(k => k.includes("taggrams"));
+    const x2 = coords2.map(p => p[0]);
+    const y2 = coords2.map(p => p[1]);
 
-      const coords = resp[keyEmb];
-      const tg = resp[keyTags];
-      todosTaggrams2 = todosTaggrams2.concat(tg);
-
-      const x = coords.map(p => p[0]);
-      const y = coords.map(p => p[1]);
-
-      segundaGrafica.push({
-        x,
-        y,
+    setGraf2([
+      {
+        x: x2,
+        y: y2,
         type: "scatter",
         mode: "markers",
-        name: can,
-        taggrams: tg,
-      });
-    }
+        name: "Embeddings",
+        taggrams: tags2
+      }
+    ]);
 
-    setGraf2(segundaGrafica);
-    setTaggrams2(todosTaggrams2);
-    setProgreso(100)
+    setTaggrams2(tags2);
+    setProgreso(100);
   };
+
 
 
   useEffect(() => {

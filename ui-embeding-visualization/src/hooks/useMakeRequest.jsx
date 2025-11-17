@@ -37,37 +37,22 @@ export const useMakeRequest = () => {
         return tags
     }
 
-    const obtenerRepresentacion = async (red, dataset, pista, metodo) => {
-        let reqRed = '';
-        if (red) {
-            reqRed = 'red=' + red
-        }
-        let reqDataset = '';
-        if (dataset) {
-            reqDataset = 'dataset=' + dataset;
-        }
-        let reqPista = ''
-        if (pista) {
-            reqPista = 'pista=' + pista;
-        }
-        let reqMetodo = ''
-        if (metodo) {
-            reqMetodo = 'metodo=' + metodo
-        }
-        let params = ''
-        if (reqRed !== '' && reqDataset !== '' && reqPista !== '') {
-            params = '?' + reqRed + '&' + reqDataset + '&' + reqPista + '&' + reqMetodo
-        }
-        const data = await fetch(URL + '/representacion' + params);
-        const rep = await data.json()
-        console.log(rep)
-        return rep;
-    }
+    const obtenerEmbeddings = async (red, dataset, metodo, dimensiones = '') => {
+        const url = URL + `/embeddings?red=${red}&dataset=${dataset}&metodo=${metodo}&dimensiones=${dimensiones}`;
+        const resp = await fetch(url);
+        return await resp.json(); // {name, data}
+    };
+
+    const obtenerTaggrams = async (red, dataset, metodo, dimensiones) => {
+        const url = URL + `/taggrams?red=${red}&dataset=${dataset}&metodo=${metodo}&dimensions=${dimensiones}`;
+        const resp = await fetch(url);
+        return await resp.json(); // {name, data}
+    };
 
     return {
-        getEmbeddingsTaggrams,
+        obtenerEmbeddings,
+        obtenerTaggrams,
         obtenerAudios,
-        obtenerRepresentacion,
         obtenerTags
     }
 }
