@@ -23,20 +23,13 @@ def hello_world():
 
 @app.route("/audios")
 def listar_audios():
-    carpeta = "./audio"
-
-    archivos = [
-        f for f in os.listdir(carpeta)
-        if os.path.isfile(os.path.join(carpeta, f))
-    ]
-
-    return archivos
+    tracks = database.get_all_tracks()
+    return [track['filename'] for track in tracks]
 
 @app.route("/tags")
 def listar_tags():
-    TAGS = ['genre---downtempo', 'genre---ambient', 'genre---rock', 'instrument---synthesizer', 'genre---atmospheric', 'genre---indie', 'instrument---electricpiano', 'genre---newage', 'instrument---strings', 'instrument---drums', 'instrument---drummachine', 'genre---techno', 'instrument---guitar', 'genre---alternative', 'genre---easylistening', 'genre---instrumentalpop', 'genre---chillout', 'genre---metal', 'mood/theme---happy', 'genre---lounge', 'genre---reggae', 'genre---popfolk', 'genre---orchestral', 'instrument---acousticguitar', 'genre---poprock', 'instrument---piano', 'genre---trance', 'genre---dance', 'instrument---electricguitar', 'genre---soundtrack', 'genre---house', 'genre---hiphop', 'genre---classical', 'mood/theme---energetic', 'genre---electronic', 'genre---world', 'genre---experimental', 'instrument---violin', 'genre---folk', 'mood/theme---emotional', 'instrument---voice', 'instrument---keyboard', 'genre---pop', 'instrument---bass', 'instrument---computer', 'mood/theme---film', 'genre---triphop', 'genre---jazz', 'genre---funk', 'mood/theme---relaxing']
-
-    return TAGS
+    genre_map = database.get_tags()
+    return list(genre_map.values())
 
 @app.route('/embeddings')
 def embedding():
@@ -44,7 +37,7 @@ def embedding():
         red = request.args.get('red', '').lower()
         dataset = request.args.get('dataset', '').lower()
         metodo = request.args.get('metodo', '').lower()
-        dimensiones = request.args.get('dimensiones', '').lower()
+        dimensions = request.args.get('dimensions', '').lower()
     except:
         print('No se encontro param de:',red,dataset)
     
