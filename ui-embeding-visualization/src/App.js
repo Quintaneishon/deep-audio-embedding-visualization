@@ -112,7 +112,7 @@ setProgreso(25)
     obtenerTags().then(data => {
       setListaTags(data);
     })
-  }, [obtenerAudios,obtenerTags])
+  }, [])
 
   return (
     <div className='main'>
