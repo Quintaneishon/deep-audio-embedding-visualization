@@ -1,0 +1,7 @@
+.divGrafico{
+    width: 100%;
+}
+.grafica{
+    display: flex;
+    justify-content: center;
+}

@@ -25,8 +25,8 @@ export const SelectorGrafico = ({ arquitectura, setArquitectura, dataset, setDat
                     value={arquitectura}
                     onChange={handleArquitecturaChange}
                 >
-                    <option value="MusiCNN">MusiCNN</option>
-                    <option value="VGG">VGG</option>
+                    <option value="musicnn">MusiCNN</option>
+                    <option value="vgg">VGG</option>
                 </Form.Select>
             </div>
 
@@ -38,7 +38,7 @@ export const SelectorGrafico = ({ arquitectura, setArquitectura, dataset, setDat
                     onChange={handleDatasetChange}
                 >
                     <option value="MSD">MSD</option>
-                    {arquitectura === 'MusiCNN' && <option value="MTAT">MTAT</option>}
+                    {arquitectura === 'musicnn' && <option value="mtat">MTAT</option>}
                 </Form.Select>
             </div>
             <div>
@@ -51,8 +51,8 @@ export const SelectorGrafico = ({ arquitectura, setArquitectura, dataset, setDat
                         setTipoGrafica(e.target.value)
                     }}
                 >
-                    <option value="pca">PCA</option>
-                    <option value="std-pca">STD-PCA</option>
+                    {/* <option value="pca">PCA</option>
+                    <option value="std-pca">STD-PCA</option> */}
                     <option value="tsne">t-SNE</option>
                     <option value="umap">UMAP</option>
                 </Form.Select>

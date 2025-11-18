@@ -37,7 +37,7 @@ def embedding():
         red = request.args.get('red', '').lower()
         dataset = request.args.get('dataset', '').lower()
         metodo = request.args.get('metodo', '').lower()
-        dimensions = request.args.get('dimensions', '').lower()
+        dimensiones = request.args.get('dimensions', '').lower()
     except:
         print('No se encontro param de:',red,dataset)
     
@@ -48,10 +48,10 @@ def embedding():
         dataset = 'msd'
     if metodo == '':
         metodo = 'umap'
-    if dimensions == '':
+    if dimensiones == '':
         dimensions = 2
     else:
-        dimensions = int(dimensions)
+        dimensions = int(dimensiones)
   
     print(f'Computing embeddings on-demand for ({red}/{dataset})')
     embeddings = database.get_embedding_coords(red, dataset, metodo, dimensions)    

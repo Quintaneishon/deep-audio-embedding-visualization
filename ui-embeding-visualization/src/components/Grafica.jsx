@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { SelectorGrafico } from "./SelectorGrafico";
 import Plot from "react-plotly.js";
+import "../styles/grafica.css";
 
 export const Grafica = ({
     arquitectura,
@@ -13,19 +14,36 @@ export const Grafica = ({
     setTipoGrafica,
     izq,
     tagsSeleccionados,
-    taggrams,         
+    taggrams,
     allTagNames
 }) => {
     const [plotData, setPlotData] = useState([]);
+
+    const normalizarTaggrams = (taggrams) => {
+        if (!taggrams || taggrams.length === 0) return [];
+
+        if (Array.isArray(taggrams[0]) && typeof taggrams[0][0] === "object") {
+            return taggrams.map(tg => tg.map(obj => Number(obj.value)));
+        }
+
+        if (Array.isArray(taggrams[0]) && typeof taggrams[0][0] === "number") {
+            return taggrams;
+        }
+
+        if (typeof taggrams[0] === "object") {
+            return taggrams.map(obj => Object.values(obj).map(v => Number(v)));
+        }
+
+        return taggrams;
+    };
+
+    const normalizados = normalizarTaggrams(taggrams);
+
     useEffect(() => {
         if (!data || data.length === 0) return;
 
-        if (!tagsSeleccionados || tagsSeleccionados.length === 0 || !taggrams || taggrams.length === 0) {
-            setPlotData(
-                data.map(trace => ({
-                    ...trace,
-                }))
-            );
+        if (!tagsSeleccionados || tagsSeleccionados.length === 0 || normalizados.length === 0) {
+            setPlotData(data);
             return;
         }
 
@@ -33,13 +51,10 @@ export const Grafica = ({
             .map(tag => allTagNames.indexOf(tag))
             .filter(idx => idx >= 0);
 
-        let activaciones = [];
-        if (Array.isArray(taggrams[0])) {
-            activaciones = taggrams.map(tg => {
-                const valores = indices.map(i => tg[i]);
-                return valores.reduce((a, b) => a + b, 0) / valores.length;
-            });
-        }
+        const activaciones = normalizados.map(tg => {
+            const valores = indices.map(i => tg[i]);
+            return valores.reduce((a, b) => a + b, 0) / valores.length;
+        });
 
         const updated = data.map(trace => ({
             ...trace,
@@ -54,7 +69,7 @@ export const Grafica = ({
         }));
 
         setPlotData(updated);
-    }, [tagsSeleccionados, data, taggrams,allTagNames]);
+    }, [tagsSeleccionados, data, taggrams, allTagNames]);
 
     return (
         <div
@@ -76,16 +91,17 @@ export const Grafica = ({
                     layout={layout}
                     onClick={(e) => {
                         const punto = e.points[0];
+                        const idx = punto.pointIndex;
+                        if (!normalizados || normalizados.length <= idx) return;
 
-                        if (taggrams && taggrams.length > punto.pointIndex) {
-                            const activaciones = taggrams[punto.pointIndex];
-                            const topTags = activaciones
-                                .map((v, i) => ({ i, v }))
-                                .sort((a, b) => b.v - a.v)
-                                .slice(0, 3)
-                                .map(t => `${allTagNames[t.i]}: ${t.v.toFixed(2)}`);
-                            alert(`Top tags del punto:\n${topTags.join("\n")}`);
-                        }
+                        const vector = normalizados[idx];
+
+                        const topTags = vector
+                            .map((v, i) => ({ i, v }))
+                            .sort((a, b) => b.v - a.v)
+                            .slice(0, 3)
+                            .map(t => `${allTagNames[t.i]}: ${t.v.toFixed(2)}`);
+                        alert(`Top tags del punto:\n${topTags.join("\n")}`);
                     }}
                 />
             </div>
