@@ -236,14 +236,7 @@ def get_embedding_coords(red, dataset, metodo, dimensions):
     if not result:
         return None
     
-    # Load genre mappings from CSV
-    csv_path = Path(config.CSV_PATH)
-    genre_map = {}
-    if csv_path.exists():
-        with open(csv_path, 'r') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                genre_map[row['filename']] = row['genre']
+    genre_map = get_tags()
     
     embeddings_list = []
     filenames = []
@@ -263,8 +256,10 @@ def get_embedding_coords(red, dataset, metodo, dimensions):
     for i, filename in enumerate(filenames):
         genre = genre_map.get(filename, 'Unknown')
         result_array.append({
-            'data': projected[i].tolist(),
-            'tag': genre
+            'coords': projected[i].tolist(),
+            'tag': genre,
+            'name': filename,
+            'audio': config.SONGS_PATH + '/' + filename
         })
     
     return result_array
@@ -289,14 +284,7 @@ def get_taggram_coords(red, dataset, metodo, dimensions):
     if not result:
         return None
     
-    # Load genre mappings from CSV
-    csv_path = Path(config.CSV_PATH)
-    genre_map = {}
-    if csv_path.exists():
-        with open(csv_path, 'r') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                genre_map[row['filename']] = row['genre']
+    genre_map = get_tags()
     
     # Extract taggrams and filenames
     taggrams_list = []
@@ -317,11 +305,27 @@ def get_taggram_coords(red, dataset, metodo, dimensions):
     for i, filename in enumerate(filenames):
         genre = genre_map.get(filename, 'Unknown')
         result_array.append({
-            'data': projected[i].tolist(),
-            'tag': genre
+            'coords': projected[i].tolist(),
+            'tag': genre,
+            'name': filename,
+            'audio': config.SONGS_PATH + '/' + filename
         })
     
     return result_array
+
+def get_tags():
+    """
+    Get all tags from the csv file if exists.
+    """
+    # Load genre mappings from CSV
+    csv_path = Path(config.CSV_PATH)
+    genre_map = {}
+    if csv_path.exists():
+        with open(csv_path, 'r') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                genre_map[row['filename']] = row['genre']
+    return genre_map
 
 
 # ============================================================================

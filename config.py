@@ -12,6 +12,7 @@ CACHE_DIR = str(PROJECT_ROOT / 'db')
 DATABASE_PATH = str(PROJECT_ROOT / 'db' / 'audio_cache.db')
 AUDIO_DIR = str(PROJECT_ROOT / 'audio')
 CSV_PATH = str(PROJECT_ROOT / 'audio' / 'selected_songs.csv')
+SONGS_PATH = str(PROJECT_ROOT / 'audio')
 
 # Model configurations
 MODELS = ['musicnn', 'vgg']
