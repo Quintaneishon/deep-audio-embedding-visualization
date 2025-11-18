@@ -38,7 +38,7 @@ def embedding():
         red = request.args.get('red', '').lower()
         dataset = request.args.get('dataset', '').lower()
         metodo = request.args.get('metodo', '').lower()
-        dimensiones = request.args.get('dimensiones', '').lower()
+        dimensions = request.args.get('dimensiones', '').lower()
     except:
         print('No se encontro param de:',red,dataset)
     
