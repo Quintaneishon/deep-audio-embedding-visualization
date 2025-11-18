@@ -16,7 +16,6 @@ export const SidePane = ({ listaTags, tags, setTags, canciones, setCanciones, li
         setCanciones(selectedValues);
         console.log('Canciones seleccionados:', selectedValues);
     };
-    console.log(progreso)
     return (
         <div className='sidepane'>
             <div className='item'>
