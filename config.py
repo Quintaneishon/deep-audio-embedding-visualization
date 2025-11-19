@@ -15,8 +15,8 @@ CSV_PATH = str(PROJECT_ROOT / 'audio' / 'selected_songs.csv')
 SONGS_PATH = str(PROJECT_ROOT / 'audio')
 
 # Model configurations
-MODELS = ['musicnn', 'vgg']
-DATASETS = ['msd', 'mtat']
+MODELS = ['musicnn', 'vgg', 'whisper']
+DATASETS = ['msd', 'mtat', 'base', 'small']  # base/small are Whisper model sizes
 
 # Model weight paths (absolute paths)
 MODEL_WEIGHTS = {
@@ -27,6 +27,11 @@ MODEL_WEIGHTS = {
     'vgg': {
         'msd': str(PROJECT_ROOT / 'ML' / 'pesos' / 'msd' / 'vgg.pth'),
         'mtat': str(PROJECT_ROOT / 'ML' / 'pesos' / 'mtat' / 'vgg.pth')
+    },
+    'whisper': {
+        'base': 'base',  # Whisper model name (auto-downloads)
+        'small': 'small',
+        'tiny': 'tiny'
     }
 }
 

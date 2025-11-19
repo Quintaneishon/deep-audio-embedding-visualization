@@ -8,3 +8,35 @@
     margin-top: 15px;
     margin-bottom: 15px;
 }
+
+/* Style for optgroups in the select */
+.sidepane select optgroup {
+    font-weight: bold;
+    font-style: normal;
+    background-color: #f0f0f0;
+    color: #333;
+    padding: 5px;
+}
+
+.sidepane select optgroup[label*="Genres"] {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+.sidepane select optgroup[label*="Other"] {
+    background-color: #fff3e0;
+    color: #f57c00;
+}
+
+/* Style for selected options */
+.sidepane select option:checked {
+    background-color: #4caf50;
+    color: white;
+    font-weight: bold;
+}
+
+/* Increased height for tags select */
+.tags-select {
+    min-height: 500px !important;
+    height: auto;
+}

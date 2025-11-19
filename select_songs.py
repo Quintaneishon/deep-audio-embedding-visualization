@@ -9,6 +9,7 @@ import random
 import shutil
 import os
 from pathlib import Path
+from collections import defaultdict
 
 # Paths configuration
 DATASET_PATH = Path('/home/ar/Data/Ajitzi/mtg-jamendo-dataset')
@@ -92,9 +93,29 @@ def main():
         print(f"Warning: Only {len(songs_with_one_genre)} songs available, selecting all of them")
         selected_songs = songs_with_one_genre
     else:
-        # Randomly select 500 songs
-        selected_songs = random.sample(songs_with_one_genre, NUM_SONGS)
-        print(f"Randomly selected {NUM_SONGS} songs")
+        # Select songs with a more balanced genre distribution
+        genre_to_songs = defaultdict(list)
+        for song in songs_with_one_genre:
+            genre_to_songs[song['genre']].append(song)
+
+        # Shuffle songs within each genre to keep randomness
+        for genre_songs in genre_to_songs.values():
+            random.shuffle(genre_songs)
+
+        selected_songs = []
+
+        # Round-robin sampling across genres to balance the distribution
+        while len(selected_songs) < NUM_SONGS and any(genre_to_songs.values()):
+            for genre, genre_songs in list(genre_to_songs.items()):
+                if len(selected_songs) >= NUM_SONGS:
+                    break
+                if genre_songs:
+                    selected_songs.append(genre_songs.pop())
+                if not genre_songs:
+                    # Remove genres that have been exhausted
+                    del genre_to_songs[genre]
+
+        print(f"Selected {len(selected_songs)} songs with a more balanced genre distribution (target = {NUM_SONGS})")
     
     # Create output directory if it doesn't exist
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
