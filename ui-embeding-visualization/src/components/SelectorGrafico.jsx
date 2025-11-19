@@ -1,7 +1,7 @@
 import Form from 'react-bootstrap/Form';
 import '../styles/selectorgrafico.css';
 
-export const SelectorGrafico = ({ arquitectura, setArquitectura, dataset, setDataset,tipoGrafica,setTipoGrafica }) => {
+export const SelectorGrafico = ({ arquitectura, setArquitectura, dataset, setDataset,tipoGrafica,setTipoGrafica, visualizar,setVisualizar }) => {
 
     const handleArquitecturaChange = (e) => {
         setArquitectura(e.target.value);
@@ -55,6 +55,19 @@ export const SelectorGrafico = ({ arquitectura, setArquitectura, dataset, setDat
                     <option value="std-pca">STD-PCA</option> */}
                     <option value="tsne">t-SNE</option>
                     <option value="umap">UMAP</option>
+                </Form.Select>
+            </div>
+             <div>
+                <p>Visualizar</p>
+                <Form.Select
+                    aria-label="Visualizar"
+                    value={visualizar}
+                    onChange={(e)=>{
+                        setVisualizar(e.target.value)
+                    }}
+                >
+                    <option value="embedding">Embeddings</option>
+                    <option value="taggram">Taggrams</option>
                 </Form.Select>
             </div>
         </div>

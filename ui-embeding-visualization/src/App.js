@@ -12,6 +12,7 @@ function App() {
   const [listaTags, setListaTags] = useState([]);
   const [canciones, setCanciones] = useState([]);
   const [listaCanciones, setListaCanciones] = useState([]);
+  const [visualizar,setVisualizar] = useState('embedding')
 
   // Selector Grafica 1
   const [arquitectura1, setArquitectura1] = useState('musicnn');
@@ -20,6 +21,7 @@ function App() {
   const [graf1, setGraf1] = useState([]);
   const [taggrams1, setTaggrams1] = useState([])
   const [embeddings1,setEmbeddings1] = useState([])
+  const [taggramData1,setTaggramData1] = useState([])
 
   const layout = { width: 550, height: 550, title: { text: '' } }
   // Selector Grafica 2
@@ -40,9 +42,11 @@ function App() {
     const tg1 = await obtenerTaggrams(arquitectura1, dataset1, tipoGrafica1, 2);
 
     const coords1 = emb1.data;
+    const coordsTaggrams1 = tg1.data;
     const x1 = coords1.map(p => p.coords[0]);
     const y1 = coords1.map(p => p.coords[1]);
     setEmbeddings1(coords1);
+    setTaggramData1(coordsTaggrams1)
     const grupos = {};
     coords1.forEach(p => {
       if (!grupos[p.name]) grupos[p.name] = { x: [], y: [] };
@@ -62,7 +66,24 @@ function App() {
 
     setGraf1(traces);
 
-    setTaggrams1(tg1.data);
+    const gruposTaggrams = {};
+    coordsTaggrams1.forEach(p => {
+      if (!gruposTaggrams[p.name]) gruposTaggrams[p.name] = { x: [], y: [] };
+      gruposTaggrams[p.name].x.push(p.coords[0]);
+      gruposTaggrams[p.name].y.push(p.coords[1]);
+    });
+
+    const tracesTaggrams = Object.entries(gruposTaggrams).map(([name, coords]) => ({
+      x: coords.x,
+      y: coords.y,
+      type: "scatter",
+      mode: "markers",
+      marker: { size: 10 },
+      name: name,
+      showlegend: true
+    }));
+
+    setTaggrams1(tracesTaggrams);
     setProgreso(50);
 
     // === 2 GRAFICA ===
@@ -102,7 +123,7 @@ function App() {
       <div className='mainsection'>
         <SidePane listaTags={listaTags} tags={tags} setTags={setTags} canciones={canciones} setCanciones={setCanciones} listaCanciones={listaCanciones} cargarDatos={cargarDatos} progreso={progreso}></SidePane>
         <div className='graficas'>
-          <Grafica embeddings={embeddings1} arquitectura={arquitectura1} setArquitectura={setArquitectura1} dataset1={dataset1} setDataset={setDataset1} layout={layout} data={graf1} tipoGrafica={tipoGrafica1} setTipoGrafica={setTipoGrafica1} tagsSeleccionados={tags} taggrams={taggrams1} allTagNames={listaTags}></Grafica>
+          <Grafica visualizar={visualizar} setVisualizar={setVisualizar} embeddings={visualizar === 'embedding'?embeddings1:taggramData1} arquitectura={arquitectura1} setArquitectura={setArquitectura1} dataset1={dataset1} setDataset={setDataset1} layout={layout} data={visualizar === 'embedding'? graf1: taggrams1} tipoGrafica={tipoGrafica1} setTipoGrafica={setTipoGrafica1} tagsSeleccionados={tags} taggrams={taggrams1} allTagNames={listaTags}></Grafica>
           {
             //<Grafica arquitectura={arquitectura2} setArquitectura={setArquitectura2} dataset1={dataset2} setDataset={setDataset2} layout={layout} data={graf2} tipoGrafica={tipoGrafica2} setTipoGrafica={setTipoGrafica2} tagsSeleccionados={tags} taggrams={taggrams2} allTagNames={listaTags}></Grafica>
           }

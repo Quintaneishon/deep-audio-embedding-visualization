@@ -7,7 +7,7 @@ export const SidePane = ({ listaTags, tags, setTags, canciones, setCanciones, li
 
     const handleTagsChange = (e) => {
         const selectedValues = Array.from(e.target.selectedOptions, (option) => option.value);
-        setTags(selectedValues);
+       // setTags(selectedValues);
         console.log('Tags seleccionados:', selectedValues);
     };
 
@@ -28,11 +28,11 @@ export const SidePane = ({ listaTags, tags, setTags, canciones, setCanciones, li
                 >
                     {listaTags.map((tag, idx) => <option value={tag} key={idx}>{tag}</option>)}
                 </Form.Select>
-                <Button style={{ marginTop: '10px' }} onClick={() => setTags([])}>Limpiar</Button>
+                {/* <Button style={{ marginTop: '10px' }} onClick={() => setTags([])}>Limpiar</Button> */}
             </div>
 
             <div className='item'>
-                <p>Canción</p>
+                <p>Canciones</p>
                 <Form.Select
                     multiple
                     aria-label="Cancion"
@@ -48,7 +48,7 @@ export const SidePane = ({ listaTags, tags, setTags, canciones, setCanciones, li
                     <ProgressBar now={progreso} />
                 </div>
             }
-            {(progreso === 0 || progreso === 100) && <Button style={{ marginTop: '10px' }} onClick={cargarDatos}>Aplicar</Button>}
+            {(progreso === 0 || progreso === 100) && <Button style={{ marginTop: '10px' }} onClick={cargarDatos}>Obtener Embeddings y Taggrams</Button>}
         </div>
     );
 };

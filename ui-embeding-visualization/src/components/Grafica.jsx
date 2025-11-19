@@ -16,60 +16,43 @@ export const Grafica = ({
     tagsSeleccionados,
     taggrams,
     allTagNames,
-    embeddings
+    embeddings,
+    visualizar,
+    setVisualizar
 }) => {
     const [plotData, setPlotData] = useState([]);
 
-    const normalizarTaggrams = (taggrams) => {
-        if (!taggrams || taggrams.length === 0) return [];
-
-        if (Array.isArray(taggrams[0]) && typeof taggrams[0][0] === "object") {
-            return taggrams.map(tg => tg.map(obj => Number(obj.value)));
-        }
-
-        if (Array.isArray(taggrams[0]) && typeof taggrams[0][0] === "number") {
-            return taggrams;
-        }
-
-        if (typeof taggrams[0] === "object") {
-            return taggrams.map(obj => Object.values(obj).map(v => Number(v)));
-        }
-
-        return taggrams;
-    };
-
-    const normalizados = normalizarTaggrams(taggrams);
-
     useEffect(() => {
         if (!data || data.length === 0) return;
+        
 
-        if (!tagsSeleccionados || tagsSeleccionados.length === 0 || normalizados.length === 0) {
+        if (!tagsSeleccionados || tagsSeleccionados.length === 0) {
             setPlotData(data);
             return;
         }
 
-        const indices = tagsSeleccionados
-            .map(tag => allTagNames.indexOf(tag))
-            .filter(idx => idx >= 0);
+        // const indices = tagsSeleccionados
+        //     .map(tag => allTagNames.indexOf(tag))
+        //     .filter(idx => idx >= 0);
 
-        const activaciones = normalizados.map(tg => {
-            const valores = indices.map(i => tg[i]);
-            return valores.reduce((a, b) => a + b, 0) / valores.length;
-        });
+        // const activaciones = normalizados.map(tg => {
+        //     const valores = indices.map(i => tg[i]);
+        //     return valores.reduce((a, b) => a + b, 0) / valores.length;
+        // });
 
-        const updated = data.map(trace => ({
-            ...trace,
-            marker: {
-                color: activaciones,
-                colorscale: "Reds",
-                cmin: 0,
-                cmax: 1,
-                showscale: true,
-                size: 6
-            }
-        }));
+        // const updated = data.map(trace => ({
+        //     ...trace,
+        //     marker: {
+        //         color: activaciones,
+        //         colorscale: "Reds",
+        //         cmin: 0,
+        //         cmax: 1,
+        //         showscale: true,
+        //         size: 6
+        //     }
+        // }));
 
-        setPlotData(updated);
+        // setPlotData(updated);
     }, [tagsSeleccionados, data, taggrams, allTagNames]);
 
     return (
@@ -84,6 +67,8 @@ export const Grafica = ({
                 setDataset={setDataset}
                 tipoGrafica={tipoGrafica}
                 setTipoGrafica={setTipoGrafica}
+                visualizar={visualizar}
+                setVisualizar={setVisualizar}
             />
 
             <div className="grafica">
