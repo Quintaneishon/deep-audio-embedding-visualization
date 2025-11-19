@@ -19,6 +19,7 @@ function App() {
   const [tipoGrafica1, setTipoGrafica1] = useState('umap')
   const [graf1, setGraf1] = useState([]);
   const [taggrams1, setTaggrams1] = useState([])
+  const [embeddings1,setEmbeddings1] = useState([])
 
   const layout = { width: 550, height: 550, title: { text: '' } }
   // Selector Grafica 2
@@ -41,17 +42,25 @@ function App() {
     const coords1 = emb1.data;
     const x1 = coords1.map(p => p.coords[0]);
     const y1 = coords1.map(p => p.coords[1]);
+    setEmbeddings1(coords1);
+    const grupos = {};
+    coords1.forEach(p => {
+      if (!grupos[p.name]) grupos[p.name] = { x: [], y: [] };
+      grupos[p.name].x.push(p.coords[0]);
+      grupos[p.name].y.push(p.coords[1]);
+    });
 
-    setGraf1([
-      {
-        x: x1,
-        y: y1,
-        type: "scatter",
-        mode: "markers",
-        name: "Embeddings",
-        taggrams: tg1.data
-      }
-    ]);
+    const traces = Object.entries(grupos).map(([name, coords]) => ({
+      x: coords.x,
+      y: coords.y,
+      type: "scatter",
+      mode: "markers",
+      marker: { size: 10 },
+      name: name,
+      showlegend: true
+    }));
+
+    setGraf1(traces);
 
     setTaggrams1(tg1.data);
     setProgreso(50);
@@ -93,9 +102,9 @@ function App() {
       <div className='mainsection'>
         <SidePane listaTags={listaTags} tags={tags} setTags={setTags} canciones={canciones} setCanciones={setCanciones} listaCanciones={listaCanciones} cargarDatos={cargarDatos} progreso={progreso}></SidePane>
         <div className='graficas'>
-          <Grafica arquitectura={arquitectura1} setArquitectura={setArquitectura1} dataset1={dataset1} setDataset={setDataset1} layout={layout} data={graf1} tipoGrafica={tipoGrafica1} setTipoGrafica={setTipoGrafica1} tagsSeleccionados={tags} taggrams={taggrams1} allTagNames={listaTags}></Grafica>
+          <Grafica embeddings={embeddings1} arquitectura={arquitectura1} setArquitectura={setArquitectura1} dataset1={dataset1} setDataset={setDataset1} layout={layout} data={graf1} tipoGrafica={tipoGrafica1} setTipoGrafica={setTipoGrafica1} tagsSeleccionados={tags} taggrams={taggrams1} allTagNames={listaTags}></Grafica>
           {
-          //<Grafica arquitectura={arquitectura2} setArquitectura={setArquitectura2} dataset1={dataset2} setDataset={setDataset2} layout={layout} data={graf2} tipoGrafica={tipoGrafica2} setTipoGrafica={setTipoGrafica2} tagsSeleccionados={tags} taggrams={taggrams2} allTagNames={listaTags}></Grafica>
+            //<Grafica arquitectura={arquitectura2} setArquitectura={setArquitectura2} dataset1={dataset2} setDataset={setDataset2} layout={layout} data={graf2} tipoGrafica={tipoGrafica2} setTipoGrafica={setTipoGrafica2} tagsSeleccionados={tags} taggrams={taggrams2} allTagNames={listaTags}></Grafica>
           }
         </div>
       </div>
