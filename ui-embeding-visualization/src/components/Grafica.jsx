@@ -21,10 +21,9 @@ export const Grafica = ({
     setVisualizar
 }) => {
     const [plotData, setPlotData] = useState([]);
-
     useEffect(() => {
         if (!data || data.length === 0) return;
-        
+
 
         if (!tagsSeleccionados || tagsSeleccionados.length === 0) {
             setPlotData(data);
@@ -76,8 +75,12 @@ export const Grafica = ({
                     data={plotData}
                     layout={layout}
                     onClick={(e) => {
-                        const idx = e.points[0].pointIndex;
-                        alert(`Tag: ${embeddings[idx].tag}`);
+                        try {
+                            const x = e.points[0].x;
+                            const y = e.points[0].y;
+                            const embedTag = embeddings.filter((e) => { return e.coords[0] == x && e.coords[1] == y })
+                            alert(`Tag: ${embedTag[0].tag}`);
+                        } catch (e) { }
                     }}
 
                 />
