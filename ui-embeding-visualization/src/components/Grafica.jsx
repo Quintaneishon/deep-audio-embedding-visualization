@@ -15,7 +15,8 @@ export const Grafica = ({
     izq,
     tagsSeleccionados,
     taggrams,
-    allTagNames
+    allTagNames,
+    embeddings
 }) => {
     const [plotData, setPlotData] = useState([]);
 
@@ -90,19 +91,10 @@ export const Grafica = ({
                     data={plotData}
                     layout={layout}
                     onClick={(e) => {
-                        const punto = e.points[0];
-                        const idx = punto.pointIndex;
-                        if (!normalizados || normalizados.length <= idx) return;
-
-                        const vector = normalizados[idx];
-
-                        const topTags = vector
-                            .map((v, i) => ({ i, v }))
-                            .sort((a, b) => b.v - a.v)
-                            .slice(0, 3)
-                            .map(t => `${allTagNames[t.i]}: ${t.v.toFixed(2)}`);
-                        alert(`Top tags del punto:\n${topTags.join("\n")}`);
+                        const idx = e.points[0].pointIndex;
+                        alert(`Tag: ${embeddings[idx].tag}`);
                     }}
+
                 />
             </div>
         </div>
