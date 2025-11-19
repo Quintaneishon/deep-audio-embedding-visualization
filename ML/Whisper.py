@@ -160,7 +160,7 @@ class WhisperEmbedding(nn.Module):
         # Determine intermediate layer for taggram extraction
         if intermediate_layer is None:
             # Use middle layer by default
-            self.intermediate_layer = self.n_audio_layer // 2
+            self.intermediate_layer = self.n_audio_layer // 3
         else:
             self.intermediate_layer = intermediate_layer
         
