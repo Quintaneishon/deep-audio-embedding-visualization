@@ -9,6 +9,7 @@ This document describes the available API endpoints for the Deep Audio Embedding
 2. [GET /tags](#get-tags)
 3. [GET /embeddings](#get-embeddings)
 4. [GET /taggrams](#get-taggrams)
+5. [GET /audio/<filename>](#get-audiofilename)
 
 ---
 
@@ -243,11 +244,58 @@ GET /taggrams?red=musicnn&dataset=msd&metodo=umap&dimensions=2
 
 ---
 
+---
+
+## GET /audio/<filename>
+
+Serves audio files from the server's audio directory.
+
+### Request
+
+**Endpoint:** `/audio/<filename>`
+
+**Method:** `GET`
+
+**URL Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `filename` | string | Yes | The name of the audio file to retrieve (e.g., `track_0353107.mp3`) |
+
+### Response
+
+**Content-Type:** `audio/mpeg` (or appropriate audio MIME type)
+
+**Response Body:** Binary audio file data
+
+### Example Request
+
+```
+GET /audio/track_0353107.mp3
+```
+
+### Example Response
+
+Binary audio data stream
+
+### Usage
+
+This endpoint is used by the frontend to play audio when clicking on points in the visualization. The audio path is included in the data returned by the `/embeddings` and `/taggrams` endpoints in the format:
+
+```json
+{
+  "audio": "http://localhost:5000/audio/track_0353107.mp3"
+}
+```
+
+---
+
 ## Notes
 
-- All endpoints return JSON responses
+- All endpoints return JSON responses (except `/audio/<filename>` which returns binary audio)
 - Query parameters are case-insensitive (converted to lowercase)
 - Default values are applied when parameters are not provided or are empty
 - The `dimensions` parameter must be a valid integer
 - Embeddings and taggrams are computed on-demand based on the requested parameters
+- Audio files are served with CORS enabled for frontend access
 

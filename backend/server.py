@@ -22,6 +22,12 @@ app.teardown_appcontext(database.close_db)
 def hello_world():
     return "<p>Hello, World!</p>"
 
+@app.route('/audio/<path:filename>')
+def serve_audio(filename):
+    """Serve audio files from the audio directory."""
+    audio_dir = os.path.join(os.path.dirname(__file__), '..', 'audio')
+    return send_from_directory(audio_dir, filename)
+
 @app.route("/audios")
 def listar_audios():
     tracks = database.get_all_tracks()

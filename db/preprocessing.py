@@ -10,7 +10,7 @@ from flask import g
 from tqdm import tqdm
 import config
 import database
-from main import embeddings_y_taggrams_MusiCNN, embeddings_y_taggrams_VGG
+from main import embeddings_y_taggrams_MusiCNN, embeddings_y_taggrams_VGG, embeddings_y_taggrams_Whisper
 from proyecciones import proyectar_embeddings
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
@@ -96,7 +96,6 @@ def extract_embeddings_for_track(track_id, model, dataset):
     try:
         weights_path = config.MODEL_WEIGHTS[model][dataset]
     except KeyError:
-        print(f"Error: Invalid model/dataset combination: {model}/{dataset}")
         return None, False
         
     try:
@@ -108,6 +107,11 @@ def extract_embeddings_for_track(track_id, model, dataset):
         elif model == 'vgg':
             embeddings, taggrams = embeddings_y_taggrams_VGG(
                 weights_path, audio_path, dataset_name=dataset
+            )
+        elif model == 'whisper':
+            # For whisper, weights_path is the model name (e.g., 'base', 'small')
+            embeddings, taggrams = embeddings_y_taggrams_Whisper(
+                weights_path, audio_path
             )
         else:
             print(f"Error: Unknown model {model}")
