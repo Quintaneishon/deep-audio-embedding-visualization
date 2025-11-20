@@ -161,13 +161,9 @@ def compute_genre_similarity_command():
             click.echo(f"  EMBEDDING-BASED:")
             click.echo(f"    Mean similarity to own genre: {stats['emb_mean_similarity_to_own_genre']:.4f}")
             click.echo(f"    Agreement rate: {stats['emb_agreement_rate']:.2%}")
-            if stats.get('emb_silhouette_score') is not None:
-                click.echo(f"    Silhouette score: {stats['emb_silhouette_score']:.4f}")
             click.echo(f"  TAGGRAM-BASED:")
             click.echo(f"    Mean similarity to own genre: {stats['tag_mean_similarity_to_own_genre']:.4f}")
             click.echo(f"    Agreement rate: {stats['tag_agreement_rate']:.2%}")
-            if stats.get('tag_silhouette_score') is not None:
-                click.echo(f"    Silhouette score: {stats['tag_silhouette_score']:.4f}")
 
 @app.cli.command('clean-db')
 @click.option('--drop-tables', is_flag=True, default=False, help='Drop all tables before cleaning')

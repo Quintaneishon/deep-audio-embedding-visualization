@@ -6,7 +6,10 @@ import librosa
 from MusiCNN import Musicnn
 from VGG import VGG_Res
 from Whisper import WhisperEmbedding
+from MERT import MERTEmbedding, resample_audio
 from proyecciones import proyectar_embeddings
+import torchaudio
+import config
 
 MSD_W_MUSICNN = './pesos/msd/musicnn.pth'
 MTAT_W_MUSICNN = './pesos/mtat/musicnn.pth'
@@ -119,6 +122,47 @@ def embeddings_y_taggrams_Whisper(model_name, audio, sr=SR_MUSICNN):
     # Process entire song at once
     with torch.no_grad():
         x = torch.from_numpy(y).float().unsqueeze(0).to(DC)
+        embeddings_tensor, taggrams_tensor = model(x)
+        
+        embeddings = embeddings_tensor.squeeze(0).cpu().numpy()
+        taggrams = taggrams_tensor.squeeze(0).cpu().numpy()
+    
+    # Reshape to (1, dim) for consistency with downstream code
+    embeddings = embeddings.reshape(1, -1)  # (1, embedding_dim)
+    taggrams = taggrams.reshape(1, -1)      # (1, n_tags)
+    
+    return embeddings, taggrams
+
+def embeddings_y_taggrams_MERT(model_name, audio, sr=SR_MUSICNN):
+    """
+    Extract embeddings and taggrams from full audio using MERT encoder.
+    
+    Args:
+        model_name: MERT model name ('95M' or '330M')
+        audio: Path to audio file
+        sr: Sample rate (will be resampled to 24000 for MERT)
+    
+    Returns:
+        embeddings: (1, embedding_dim) - final encoder output (768 for 95M, 1024 for 330M)
+        taggrams: (1, 50) - intermediate layer features
+    """
+    # Create MERT model (will cache in config.MODEL_DIR)
+    model = MERTEmbedding(model_name=model_name, cache_dir=config.MODEL_DIR)
+    model.to(DC)
+    model.eval()
+
+    # Load audio at original sample rate first
+    y, loaded_sr = librosa.load(audio, sr=None)
+    
+    # Convert to tensor
+    y_tensor = torch.from_numpy(y).float()
+    
+    # Resample to 24kHz (MERT's expected sample rate)
+    resample_audio(y_tensor, loaded_sr)
+    
+    # Process entire song at once
+    with torch.no_grad():
+        x = y_tensor.unsqueeze(0).to(DC)
         embeddings_tensor, taggrams_tensor = model(x)
         
         embeddings = embeddings_tensor.squeeze(0).cpu().numpy()

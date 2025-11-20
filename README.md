@@ -1,6 +1,6 @@
 # Deep Audio Embedding Visualization
 
-A system for extracting, visualizing, and analyzing deep audio embeddings using MusiCNN and VGG models trained on MSD (Million Song Dataset) and MTAT (MagnaTagATune) datasets.
+A system for extracting, visualizing, and analyzing deep audio embeddings using multiple state-of-the-art models: MusiCNN, VGG, Whisper, and MERT. Supports both CNN and Transformer-based architectures trained on various datasets including MSD (Million Song Dataset), MTAT (MagnaTagATune), and large-scale self-supervised music data.
 
 ## Overview
 
@@ -28,6 +28,8 @@ deep-audio-embedding-visualization/
 ├── ML/                       # Neural network models
 │   ├── MusiCNN.py           # MusiCNN architecture
 │   ├── VGG.py               # VGG architecture
+│   ├── Whisper.py           # Whisper encoder (transformer-based)
+│   ├── MERT.py              # MERT music model (transformer-based)
 │   ├── modules.py           # Shared neural network components
 │   └── pesos/               # Model weights directory
 │       ├── msd/             # Million Song Dataset weights
@@ -82,8 +84,6 @@ Create the SQLite database schema for storing embeddings:
 flask --app backend.server init-db
 ```
 
-This creates `db/audio_cache.db` with tables for tracks, embeddings, and taggrams.
-
 If you want to run the React frontend:
 
 ```bash
@@ -122,11 +122,17 @@ flask --app backend.server preprocess-all
 ```
 
 This command:
-- Loads audio files at 16kHz sample rate
-- Runs inference on all model/dataset combinations (4 total: MusiCNN-MSD, MusiCNN-MTAT, VGG-MSD, VGG-MTAT)
-- Extracts 200-dimensional embeddings and 50-dimensional taggrams per track
+- Loads audio files at appropriate sample rates (16kHz for CNN models, 24kHz for MERT)
+- Runs inference on all model/dataset combinations
+- Extracts embeddings (dimensions vary by model) and 50-dimensional taggrams per track
 - Stores results as binary BLOBs in SQLite
 - Displays progress bar
+
+Model/Dataset combinations processed:
+- **MusiCNN**: MSD, MTAT (200-dim embeddings)
+- **VGG**: MSD, MTAT (512-dim embeddings)
+- **Whisper**: base, small, tiny (512-768 dim embeddings)
+- **MERT**: 95M, 330M (768-1024 dim embeddings)
 
 Processing time depends on:
 - Number of audio files
@@ -195,9 +201,9 @@ This is useful when adding new files incrementally.
 **embeddings**
 - `id`: Primary key
 - `track_id`: Foreign key to tracks
-- `model`: Model name ('musicnn' or 'vgg')
-- `dataset`: Dataset name ('msd' or 'mtat')
-- `embedding_data`: BLOB containing numpy array (200 dimensions)
+- `model`: Model name ('musicnn', 'vgg', 'whisper', or 'mert')
+- `dataset`: Dataset/model size name ('msd', 'mtat', 'base', 'small', '95m', '330m')
+- `embedding_data`: BLOB containing numpy array (dimensions vary by model)
 - `embedding_shape`: String representation of array shape
 - `taggram_data`: BLOB containing numpy array (50 dimensions)
 - `taggram_shape`: String representation of array shape
@@ -206,16 +212,46 @@ This is useful when adding new files incrementally.
 ## Model Details
 
 ### MusiCNN
-- Architecture: Convolutional neural network with vertical/horizontal filters
-- Input: Mel-spectrogram (96 mel bands, 16kHz)
-- Embedding size: 200 dimensions (MSD) or 200 dimensions (MTAT)
-- Taggram size: 50 tags
+- **Architecture**: Convolutional neural network with vertical/horizontal filters
+- **Input**: Mel-spectrogram (96 mel bands, 16kHz)
+- **Embedding size**: 200 dimensions
+- **Taggram size**: 50 tags
+- **Training**: Supervised on MSD/MTAT music tag datasets
+- **Best for**: Fast music classification, genre recognition
 
 ### VGG
-- Architecture: VGG-like CNN with residual connections
-- Input: Mel-spectrogram (128 mel bands, 16kHz)
-- Embedding size: 512 dimensions
-- Taggram size: 50 tags
+- **Architecture**: VGG-like CNN with residual connections
+- **Input**: Mel-spectrogram (128 mel bands, 16kHz)
+- **Embedding size**: 512 dimensions
+- **Taggram size**: 50 tags
+- **Training**: Supervised on MSD/MTAT music tag datasets
+- **Best for**: Deep convolutional features, robust representations
+
+### Whisper
+- **Architecture**: Transformer encoder (originally for speech-to-text)
+- **Input**: Log-mel spectrogram (80 mel bands, 16kHz)
+- **Embedding size**: 512 (base), 768 (small)
+- **Taggram size**: 50 tags (from intermediate layer)
+- **Training**: Self-supervised on 680k hours of speech
+- **Best for**: Speech analysis, temporal patterns, transfer learning
+
+### MERT (NEW! ✨)
+- **Architecture**: Transformer encoder (Wav2Vec2-style)
+- **Input**: Preprocessed waveform (24kHz)
+- **Embedding size**: 768 (95M), 1024 (330M)
+- **Taggram size**: 50 tags (from intermediate layer)
+- **Training**: Self-supervised on 160k hours of music
+- **Best for**: Music understanding, state-of-the-art music features
+- **Documentation**: See `MERT_INTEGRATION_GUIDE.md` for details
+
+### Model Comparison
+
+| Model | Type | Domain | Sample Rate | Embedding Dim | Speed | Quality |
+|-------|------|--------|-------------|---------------|-------|---------|
+| MusiCNN | CNN | Music | 16 kHz | 200 | Fast | Good |
+| VGG | CNN | Music | 16 kHz | 512 | Fast | Good |
+| Whisper | Transformer | Speech | 16 kHz | 512-768 | Medium | Good (speech) |
+| MERT | Transformer | Music | 24 kHz | 768-1024 | Slow | Best (music) |
 
 ## Dimensionality Reduction
 

@@ -13,10 +13,14 @@ DATABASE_PATH = str(PROJECT_ROOT / 'db' / 'audio_cache.db')
 AUDIO_DIR = str(PROJECT_ROOT / 'audio')
 CSV_PATH = str(PROJECT_ROOT / 'audio' / 'selected_songs.csv')
 SONGS_PATH = str(PROJECT_ROOT / 'audio')
+MODEL_DIR = str(PROJECT_ROOT / 'ML' / 'models')
 
 # Model configurations
-MODELS = ['musicnn', 'vgg', 'whisper']
-DATASETS = ['msd', 'mtat', 'base', 'small']  # base/small are Whisper model sizes
+CONV_MODELS = ['musicnn', 'vgg']
+DATASETS = ['msd', 'mtat']
+
+TRANF_MODELS = ['whisper','mert']
+MODEL_SIZES = ['base', '95m']
 
 # Model weight paths (absolute paths)
 MODEL_WEIGHTS = {
@@ -29,9 +33,10 @@ MODEL_WEIGHTS = {
         'mtat': str(PROJECT_ROOT / 'ML' / 'pesos' / 'mtat' / 'vgg.pth')
     },
     'whisper': {
-        'base': 'base',  # Whisper model name (auto-downloads)
-        'small': 'small',
-        'tiny': 'tiny'
+        'base': 'base'
+    },
+    'mert': {
+        '95m': 'm-a-p/MERT-v1-95M'
     }
 }
 
@@ -40,6 +45,5 @@ MODEL_WEIGHTS = {
 SAMPLE_RATE = 16000  # Hz
 
 # Projection methods
-CACHED_PROJECTION_METHODS = []  # No pre-cached projections (requires all embeddings)
 ON_DEMAND_PROJECTION_METHODS = ['tsne', 'umap']  # Computed on request
 
