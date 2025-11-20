@@ -5,8 +5,10 @@ export const SelectorGrafico = ({ arquitectura, setArquitectura, dataset, setDat
 
     const handleArquitecturaChange = (e) => {
         setArquitectura(e.target.value);
-        if (e.target.value === 'VGG') {
-            setDataset('MSD')
+        if (e.target.value === 'whisper') {
+            setDataset('base')
+        } else {
+            setDataset('mtat')
         }
         console.log('Arquitectura seleccionada:', e.target.value);
     };
@@ -27,6 +29,7 @@ export const SelectorGrafico = ({ arquitectura, setArquitectura, dataset, setDat
                 >
                     <option value="musicnn">MusiCNN</option>
                     <option value="vgg">VGG</option>
+                    <option value="whisper">Whisper</option>
                 </Form.Select>
             </div>
 
@@ -37,8 +40,10 @@ export const SelectorGrafico = ({ arquitectura, setArquitectura, dataset, setDat
                     value={dataset}
                     onChange={handleDatasetChange}
                 >
-                    <option value="MSD">MSD</option>
-                    {arquitectura === 'musicnn' && <option value="mtat">MTAT</option>}
+                    {(arquitectura === 'musicnn' || arquitectura === 'vgg') && <option value="mtat">MTAT</option>}
+                    {(arquitectura === 'musicnn' || arquitectura === 'vgg') && <option value="msd">MSD</option>}
+                    {(arquitectura === 'whisper') && <option value="base">Base</option>}
+                    {(arquitectura === 'whisper') && <option value="small">Small</option>}
                 </Form.Select>
             </div>
             <div>

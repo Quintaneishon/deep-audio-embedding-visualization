@@ -38,7 +38,7 @@ def proyectar_embeddings(embeddings, metodo='umap', std_normalize=False, random_
         X = X / stds
 
     if metodo == 'tsne':
-        reducer = TSNE(n_components=n_components, perplexity=30, random_state=random_state, n_iter=1000)
+        reducer = TSNE(n_components=n_components, perplexity=30, random_state=random_state, max_iter=1000)
         coords = reducer.fit_transform(X)
 
     elif metodo == 'umap':

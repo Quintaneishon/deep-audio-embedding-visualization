@@ -1,4 +1,4 @@
-from flask import Flask, request, g
+from flask import Flask, request, g, send_from_directory
 from flask_cors import CORS
 import os
 import click
@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'db'))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'ML'))
 import database
 import preprocessing
+import config
 
 AUDIO_ROUTE = './audio/'
 
@@ -91,6 +92,14 @@ def taggrams():
         'data': taggrams,
     }
 
+@app.route('/audio/<path:filename>')
+def serve_audio(filename):
+    """Serve audio files from the audio directory."""
+    try:
+        return send_from_directory(config.AUDIO_DIR, filename)
+    except Exception as e:
+        print(f"Error serving audio file {filename}: {e}")
+        return {"error": f"Audio file not found: {filename}"}, 404
 
 # ============================================================================
 # Flask CLI Commands for Preprocessing
@@ -152,9 +161,13 @@ def compute_genre_similarity_command():
             click.echo(f"  EMBEDDING-BASED:")
             click.echo(f"    Mean similarity to own genre: {stats['emb_mean_similarity_to_own_genre']:.4f}")
             click.echo(f"    Agreement rate: {stats['emb_agreement_rate']:.2%}")
+            if stats.get('emb_silhouette_score') is not None:
+                click.echo(f"    Silhouette score: {stats['emb_silhouette_score']:.4f}")
             click.echo(f"  TAGGRAM-BASED:")
             click.echo(f"    Mean similarity to own genre: {stats['tag_mean_similarity_to_own_genre']:.4f}")
             click.echo(f"    Agreement rate: {stats['tag_agreement_rate']:.2%}")
+            if stats.get('tag_silhouette_score') is not None:
+                click.echo(f"    Silhouette score: {stats['tag_silhouette_score']:.4f}")
 
 @app.cli.command('clean-db')
 @click.option('--drop-tables', is_flag=True, default=False, help='Drop all tables before cleaning')

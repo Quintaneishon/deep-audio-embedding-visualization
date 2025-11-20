@@ -23,7 +23,7 @@ function App() {
   const [embeddings1,setEmbeddings1] = useState([])
   const [taggramData1,setTaggramData1] = useState([])
 
-  const layout = { width: 550, height: 550, title: { text: '' } }
+  const layout = { autosize: true, title: { text: '' } }
   // Selector Grafica 2
   const [arquitectura2, setArquitectura2] = useState('MusiCNN');
   const [dataset2, setDataset2] = useState('MSD');

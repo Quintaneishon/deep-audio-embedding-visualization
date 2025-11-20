@@ -5,6 +5,7 @@ import torch
 import librosa
 from MusiCNN import Musicnn
 from VGG import VGG_Res
+from Whisper import WhisperEmbedding
 from proyecciones import proyectar_embeddings
 
 MSD_W_MUSICNN = './pesos/msd/musicnn.pth'
@@ -84,6 +85,41 @@ def embeddings_y_taggrams_VGG(pesos, audio, dataset_name='msd', segment_size=Non
     with torch.no_grad():
         x = torch.from_numpy(y).float().unsqueeze(0).to(DC)
         taggrams_tensor, embeddings_tensor = model(x)
+        
+        embeddings = embeddings_tensor.squeeze(0).cpu().numpy()
+        taggrams = taggrams_tensor.squeeze(0).cpu().numpy()
+    
+    # Reshape to (1, dim) for consistency with downstream code
+    embeddings = embeddings.reshape(1, -1)  # (1, embedding_dim)
+    taggrams = taggrams.reshape(1, -1)      # (1, n_tags)
+    
+    return embeddings, taggrams
+
+def embeddings_y_taggrams_Whisper(model_name, audio, sr=SR_MUSICNN):
+    """
+    Extract embeddings and taggrams from full audio using Whisper encoder.
+    
+    Args:
+        model_name: Whisper model name ('tiny', 'base', 'small', 'medium')
+        audio: Path to audio file
+        sr: Sample rate (should be 16000 for Whisper)
+    
+    Returns:
+        embeddings: (1, embedding_dim) - final encoder output
+        taggrams: (1, 50) - intermediate layer features
+    """
+    # Create Whisper model
+    model = WhisperEmbedding(model_name=model_name)
+    model.to(DC)
+    model.eval()
+
+    # Load full audio at 16kHz (Whisper's expected sample rate)
+    y, _ = librosa.load(audio, sr=16000)
+    
+    # Process entire song at once
+    with torch.no_grad():
+        x = torch.from_numpy(y).float().unsqueeze(0).to(DC)
+        embeddings_tensor, taggrams_tensor = model(x)
         
         embeddings = embeddings_tensor.squeeze(0).cpu().numpy()
         taggrams = taggrams_tensor.squeeze(0).cpu().numpy()

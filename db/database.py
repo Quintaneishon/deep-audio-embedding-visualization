@@ -259,7 +259,7 @@ def get_embedding_coords(red, dataset, metodo, dimensions):
             'coords': projected[i].tolist(),
             'tag': genre,
             'name': filename,
-            'audio': config.SONGS_PATH + '/' + filename
+            'audio': filename 
         })
     
     return result_array
@@ -308,7 +308,7 @@ def get_taggram_coords(red, dataset, metodo, dimensions):
             'coords': projected[i].tolist(),
             'tag': genre,
             'name': filename,
-            'audio': config.SONGS_PATH + '/' + filename
+            'audio': filename 
         })
     
     return result_array
