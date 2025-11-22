@@ -25,7 +25,7 @@ export const Grafica = ({
     const [plotData, setPlotData] = useState([]);
     const audioRef = useRef(null);
     const [currentPlayingPoint, setCurrentPlayingPoint] = useState(null);
-    
+
     useEffect(() => {
         if (!data || data.length === 0 || !embeddings || embeddings.length === 0) {
             setPlotData(data);
@@ -37,11 +37,11 @@ export const Grafica = ({
             // For each point in this trace, find the corresponding embedding
             const hoverTexts = trace.x.map((x, i) => {
                 const y = trace.y[i];
-                const embedding = embeddings.find(e => 
-                    Math.abs(e.coords[0] - x) < 0.0001 && 
+                const embedding = embeddings.find(e =>
+                    Math.abs(e.coords[0] - x) < 0.0001 &&
                     Math.abs(e.coords[1] - y) < 0.0001
                 );
-                
+
                 if (embedding) {
                     return `Name: ${embedding.name}<br>Genre: ${embedding.tag}`;
                 }
@@ -57,6 +57,26 @@ export const Grafica = ({
 
         setPlotData(updatedData);
     }, [data, embeddings]);
+
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === "Escape") {
+                if (audioRef.current) {
+                    audioRef.current.pause();
+                    audioRef.current.currentTime = 0;
+                }
+                setCurrentPlayingPoint(null);
+                console.log("Audio detenido con ESC");
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+        };
+    }, []);
+
 
     return (
         <div
@@ -88,17 +108,17 @@ export const Grafica = ({
                             const x = e.points[0].x;
                             const y = e.points[0].y;
                             console.log(x, y);
-                            
+
                             // Find the embedding that matches the clicked point
-                            const embedding = embeddings.find((emb) => 
-                                Math.abs(emb.coords[0] - x) < 0.0001 && 
+                            const embedding = embeddings.find((emb) =>
+                                Math.abs(emb.coords[0] - x) < 0.0001 &&
                                 Math.abs(emb.coords[1] - y) < 0.0001
                             );
-                            
+
                             if (embedding && embedding.audio) {
                                 // Create a unique identifier for the clicked point
                                 const pointId = `${embedding.name}_${x}_${y}`;
-                                
+
                                 // Check if clicking the same point that's currently playing
                                 if (currentPlayingPoint === pointId && audioRef.current) {
                                     // Stop the audio
@@ -108,35 +128,35 @@ export const Grafica = ({
                                     console.log(`Stopped: ${embedding.name}`);
                                     return;
                                 }
-                                
+
                                 // Stop current audio if playing a different track
                                 if (audioRef.current) {
                                     audioRef.current.pause();
                                     audioRef.current.currentTime = 0;
                                 }
-                                
+
                                 // Construct the audio URL
                                 const audioUrl = `http://localhost:5000/audio/${embedding.audio}`;
                                 console.log("Playing audio from:", audioUrl);
-                                
+
                                 // Play the new audio
                                 audioRef.current = new Audio(audioUrl);
-                                
+
                                 // Add event listener for when audio ends
                                 audioRef.current.addEventListener('ended', () => {
                                     setCurrentPlayingPoint(null);
                                 });
-                                
+
                                 audioRef.current.play().catch(err => {
                                     console.error("Error playing audio:", err);
                                     alert(`Error playing: ${embedding.name}`);
                                     setCurrentPlayingPoint(null);
                                 });
-                                
+
                                 setCurrentPlayingPoint(pointId);
                                 console.log(`Playing: ${embedding.name} (${embedding.tag})`);
                             }
-                        } catch (err) { 
+                        } catch (err) {
                             console.error("Error handling click:", err);
                         }
                     }}
