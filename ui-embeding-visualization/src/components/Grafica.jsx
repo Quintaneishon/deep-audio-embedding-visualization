@@ -13,18 +13,18 @@ export const Grafica = ({
     tipoGrafica,
     setTipoGrafica,
     izq,
-    tagsSeleccionados,
-    taggrams,
-    allTagNames,
     embeddings,
     visualizar,
     setVisualizar,
     agruparPor,
     setAgruparPor,
+    dimensiones,
+    setDimensiones
 }) => {
     const [plotData, setPlotData] = useState([]);
     const audioRef = useRef(null);
     const [currentPlayingPoint, setCurrentPlayingPoint] = useState(null);
+    const [graficaCargando, setGraficaCargando] = useState(false);
 
     useEffect(() => {
         if (!data || data.length === 0 || !embeddings || embeddings.length === 0) {
@@ -32,6 +32,7 @@ export const Grafica = ({
             return;
         }
 
+        setGraficaCargando(true);
         // Add hover text with name and genre information
         const updatedData = data.map(trace => {
             // For each point in this trace, find the corresponding embedding
@@ -54,7 +55,6 @@ export const Grafica = ({
                 hovertemplate: '%{text}<extra></extra>'
             };
         });
-
         setPlotData(updatedData);
     }, [data, embeddings]);
 
@@ -94,8 +94,10 @@ export const Grafica = ({
                 setVisualizar={setVisualizar}
                 agruparPor={agruparPor}
                 setAgruparPor={setAgruparPor}
+                dimensiones={dimensiones}
+                setDimensiones={setDimensiones}
             />
-
+            {graficaCargando && <p>Cargando grafica...</p>}
             <div className="grafica">
                 <Plot
                     data={plotData}
@@ -103,21 +105,32 @@ export const Grafica = ({
                     style={{ width: '100%', height: '100%' }}
                     useResizeHandler={true}
                     config={{ responsive: true }}
+                    onInitialized={() => {
+                        setGraficaCargando(false);
+                    }}
+                    onUpdate={() => {
+                        setGraficaCargando(false);
+                    }}
+                    onError={() => {
+                        setGraficaCargando(false);
+                    }}
                     onClick={(e) => {
                         try {
                             const x = e.points[0].x;
                             const y = e.points[0].y;
-                            console.log(x, y);
+                            const z = e.points[0].z;
+                            console.log(x, y, z);
 
                             // Find the embedding that matches the clicked point
                             const embedding = embeddings.find((emb) =>
                                 Math.abs(emb.coords[0] - x) < 0.0001 &&
-                                Math.abs(emb.coords[1] - y) < 0.0001
+                                Math.abs(emb.coords[1] - y) < 0.0001 &&
+                                (dimensiones === 3 ? Math.abs(emb.coords[2] - z) < 0.0001 : true)
                             );
-
+                            console.log(embedding)
                             if (embedding && embedding.audio) {
                                 // Create a unique identifier for the clicked point
-                                const pointId = `${embedding.name}_${x}_${y}`;
+                                const pointId = `${embedding.name}_${x}_${y}${dimensiones === 3 ? `_${z}` : ''}`;
 
                                 // Check if clicking the same point that's currently playing
                                 if (currentPlayingPoint === pointId && audioRef.current) {

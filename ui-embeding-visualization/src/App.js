@@ -14,6 +14,7 @@ function App() {
   const [listaCanciones, setListaCanciones] = useState([]);
   const [visualizar, setVisualizar] = useState('embedding');
   const [agruparPor, setAgruparPor] = useState('tag');
+  const [dimensiones, setDimensiones] = useState(2);
 
   // Selector Grafica 1
   const [arquitectura1, setArquitectura1] = useState('musicnn');
@@ -32,30 +33,44 @@ function App() {
   const getTracesBy = (nombre, coords) => {
     const grupos = {};
     coords.forEach(p => {
-      if (!grupos[p[nombre]]) grupos[p[nombre]] = { x: [], y: [] };
+      if (!grupos[p[nombre]]) grupos[p[nombre]] = { x: [], y: [], z: [] };
       grupos[p[nombre]].x.push(p.coords[0]);
       grupos[p[nombre]].y.push(p.coords[1]);
+      if (dimensiones === 3) {
+        grupos[p[nombre]].z.push(p.coords[2]);
+      }
     });
 
-    const traces = Object.entries(grupos).map(([name, coords]) => ({
-      x: coords.x,
-      y: coords.y,
-      type: "scatter",
-      mode: "markers",
-      marker: { size: 10 },
-      name: name,
-      showlegend: true
-    }));
+    let type = dimensiones === 3 ? "scatter3d" : 'scatter'
+
+    const traces = Object.entries(grupos).map(([name, g]) => {
+      const trace = {
+        x: g.x,
+        y: g.y,
+        type,
+        mode: "markers",
+        marker: { size: 10 },
+        name,
+        showlegend: true,
+      };
+      if (dimensiones === 3) {
+        trace.z = g.z;
+      }
+      return trace;
+    });
+
     return traces;
   }
 
   const cargarDatos = async () => {
+    setGraf1([]);
+    setTaggrams1([])
     setProgreso(25);
 
     // === 1 GRAFICA ===
-    const emb1 = await obtenerEmbeddings(arquitectura1, dataset1, tipoGrafica1, 2);
+    const emb1 = await obtenerEmbeddings(arquitectura1, dataset1, tipoGrafica1, dimensiones);
     setProgreso(50);
-    const tg1 = await obtenerTaggrams(arquitectura1, dataset1, tipoGrafica1, 2);
+    const tg1 = await obtenerTaggrams(arquitectura1, dataset1, tipoGrafica1, dimensiones);
 
     const coordEmbeddings = emb1.data;
     const coordsTaggrams1 = tg1.data;
@@ -99,7 +114,7 @@ function App() {
       <div className='mainsection'>
         <SidePane listaTags={listaTags} tags={tags} setTags={setTags} canciones={canciones} setCanciones={setCanciones} listaCanciones={listaCanciones} cargarDatos={cargarDatos} progreso={progreso}></SidePane>
         <div className='graficas'>
-          <Grafica agruparPor={agruparPor} setAgruparPor={setAgruparPor} visualizar={visualizar} setVisualizar={setVisualizar} embeddings={visualizar === 'embedding' ? embeddings1 : taggramData1} arquitectura={arquitectura1} setArquitectura={setArquitectura1} dataset1={dataset1} setDataset={setDataset1} layout={layout} data={visualizar === 'embedding' ? graf1 : taggrams1} tipoGrafica={tipoGrafica1} setTipoGrafica={setTipoGrafica1} tagsSeleccionados={tags} taggrams={taggrams1} allTagNames={listaTags}></Grafica>
+          <Grafica dimensiones={dimensiones} setDimensiones={setDimensiones} agruparPor={agruparPor} setAgruparPor={setAgruparPor} visualizar={visualizar} setVisualizar={setVisualizar} embeddings={visualizar === 'embedding' ? embeddings1 : taggramData1} arquitectura={arquitectura1} setArquitectura={setArquitectura1} dataset1={dataset1} setDataset={setDataset1} layout={layout} data={visualizar === 'embedding' ? graf1 : taggrams1} tipoGrafica={tipoGrafica1} setTipoGrafica={setTipoGrafica1}></Grafica>
         </div>
       </div>
     </div>

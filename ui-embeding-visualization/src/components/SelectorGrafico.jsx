@@ -1,7 +1,7 @@
 import Form from 'react-bootstrap/Form';
 import '../styles/selectorgrafico.css';
 
-export const SelectorGrafico = ({ arquitectura, setArquitectura, dataset, setDataset,tipoGrafica,setTipoGrafica, visualizar,setVisualizar, agruparPor,setAgruparPor }) => {
+export const SelectorGrafico = ({ arquitectura, setArquitectura, dataset, setDataset,tipoGrafica,setTipoGrafica, visualizar,setVisualizar, agruparPor,setAgruparPor, dimensiones,setDimensiones }) => {
 
     const handleArquitecturaChange = (e) => {
         setArquitectura(e.target.value);
@@ -86,6 +86,19 @@ export const SelectorGrafico = ({ arquitectura, setArquitectura, dataset, setDat
                 >
                     <option value="tag">Tag</option>
                     <option value="name">Cancion</option>
+                </Form.Select>
+            </div>
+            <div>
+                <p>Dimension</p>
+                <Form.Select
+                    aria-label="Dimension"
+                    value={String(dimensiones)}
+                    onChange={(e)=>{
+                        setDimensiones(parseInt(e.target.value))
+                    }}
+                >
+                    <option value="2">2D</option>
+                    <option value="3">3D</option>
                 </Form.Select>
             </div>
         </div>
