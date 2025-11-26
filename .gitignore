@@ -262,4 +262,5 @@ temp/
 
 /audio
 selected_songs.csv
-.venv/
+.venv/ML/checkpoints/**/*.pth
+ML/pesos/**/*.pth
