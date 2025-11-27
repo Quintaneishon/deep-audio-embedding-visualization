@@ -18,8 +18,9 @@ class WhisperContrastive(WhisperEmbedding):
     
     Architecture:
     1. Frozen Whisper encoder (pre-trained)
-    2. Trainable projection head: encoder_dim → 128
-    3. L2 normalization for contrastive learning
+    2. Raw intermediate layer features (after pooling)
+    3. Trainable projection head: intermediate_dim → 128
+    4. L2 normalization for contrastive learning
     """
     
     def __init__(self, model_name='base', projection_dim=128, intermediate_layer=None):
@@ -71,6 +72,7 @@ class WhisperContrastive(WhisperEmbedding):
     def forward_features(self, x):
         """
         Extract normalized embeddings from audio for contrastive learning.
+        Uses raw intermediate layer features (skipping taggram projection).
         
         Args:
             x: Raw audio waveform tensor [batch, num_samples] at 16kHz
@@ -93,13 +95,15 @@ class WhisperContrastive(WhisperEmbedding):
         # Stack into batch
         mel = torch.stack(mel_list).to(self.device)  # [batch, n_mels, n_frames]
         
-        # Extract features from encoder (frozen)
+        # Extract features from intermediate encoder layer (frozen)
         with torch.no_grad():
-            final_features, _ = self.extract_encoder_features(mel)
-            # Average pooling over time
-            pooled_features = torch.mean(final_features, dim=1)  # [batch, n_audio_state]
+            _, intermediate_features = self.extract_encoder_features(mel)
+            # intermediate_features: [batch, time_frames, n_audio_state]
+            
+            # Average pooling over time to get fixed-size representation
+            pooled_features = torch.mean(intermediate_features, dim=1)  # [batch, n_audio_state]
         
-        # Apply projection head (trainable)
+        # Apply projection head to raw intermediate features (trainable)
         embeddings = self.projection_head(pooled_features)  # [batch, projection_dim]
         
         # L2 normalization: z_i = z_i / ||z_i||
