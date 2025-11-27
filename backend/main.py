@@ -111,7 +111,7 @@ def embeddings_y_taggrams_Whisper(model_name, audio, sr=SR_MUSICNN):
     
     Returns:
         embeddings: (1, embedding_dim) - final encoder output
-        taggrams: (1, n_ctx * n_audio_state) - raw intermediate layer features (flattened)
+        taggrams: (1, 50) - intermediate layer features
     """
     # Create Whisper model
     model = WhisperEmbedding(model_name=model_name)
