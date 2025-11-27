@@ -5,9 +5,13 @@ export const SelectorGrafico = ({ arquitectura, setArquitectura, dataset, setDat
 
     const handleArquitecturaChange = (e) => {
         setArquitectura(e.target.value);
-        if (e.target.value === 'whisper') {
+        if (e.target.value === 'whisper' || e.target.value === 'whisper_contrastive') {
             setDataset('base')
-        } else {
+        } else if (e.target.value === 'vggish') {
+            setDataset('pretrained')
+        } else if (e.target.value === 'mert') {
+            setDataset('95m')
+        }else {
             setDataset('mtat')
         }
         console.log('Arquitectura seleccionada:', e.target.value);
@@ -30,6 +34,9 @@ export const SelectorGrafico = ({ arquitectura, setArquitectura, dataset, setDat
                     <option value="musicnn">MusiCNN</option>
                     <option value="vgg">VGG</option>
                     <option value="whisper">Whisper</option>
+                    <option value="vggish">VGGish</option>
+                    <option value="mert">MERT</option>
+                    <option value="whisper_contrastive">Whisper Contrastive</option>
                 </Form.Select>
             </div>
 
@@ -42,8 +49,9 @@ export const SelectorGrafico = ({ arquitectura, setArquitectura, dataset, setDat
                 >
                     {(arquitectura === 'musicnn' || arquitectura === 'vgg') && <option value="mtat">MTAT</option>}
                     {(arquitectura === 'musicnn' || arquitectura === 'vgg') && <option value="msd">MSD</option>}
-                    {(arquitectura === 'whisper') && <option value="base">Base</option>}
-                    {(arquitectura === 'whisper') && <option value="small">Small</option>}
+                    {(arquitectura === 'whisper' || arquitectura === 'whisper_contrastive') && <option value="base">Base</option>}
+                    {(arquitectura === 'vggish') && <option value="pretrained">Pretrained</option>}
+                    {(arquitectura === 'mert') && <option value="95m">95M</option>}
                 </Form.Select>
             </div>
             <div>
