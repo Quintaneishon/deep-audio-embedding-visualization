@@ -39,7 +39,7 @@ MODEL_WEIGHTS = {
         '95m': 'm-a-p/MERT-v1-95M'
     },
     'whisper_contrastive': {
-        'base': str(PROJECT_ROOT / 'ML' / 'checkpoints' / 'best_model.pth')
+        'base': str(PROJECT_ROOT / 'ML' / 'checkpoints' / 'whisper_contrastive_20251128_085448/best_model.pth')
     },
     'vggish': {
         'pretrained': 'vggish-10086976.pth'

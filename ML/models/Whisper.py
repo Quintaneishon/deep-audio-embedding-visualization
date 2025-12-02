@@ -134,7 +134,7 @@ class WhisperEmbedding(nn.Module):
     Both are temporally pooled (max + avg) to get fixed-size representations.
     """
     
-    def __init__(self, model_name='base', intermediate_layer=None):
+    def __init__(self, model_name='base', intermediate_layer=None, device=None):
         """
         Initialize Whisper embedding extractor.
         
@@ -142,11 +142,15 @@ class WhisperEmbedding(nn.Module):
             model_name: Whisper model size ('tiny', 'base', 'small', 'medium')
             intermediate_layer: Which encoder layer to extract for taggram
                               (default: middle layer)
+            device: Device to load model on (default: cuda if available, else cpu)
         """
         super(WhisperEmbedding, self).__init__()
         
         self.model_name = model_name
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        if device is None:
+            self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        else:
+            self.device = device
         
         # Load Whisper model
         self.whisper_model = whisper.load_model(model_name, device=self.device)

@@ -23,7 +23,7 @@ class WhisperContrastive(WhisperEmbedding):
     4. L2 normalization for contrastive learning
     """
     
-    def __init__(self, model_name='base', projection_dim=128, intermediate_layer=None):
+    def __init__(self, model_name='base', projection_dim=128, intermediate_layer=None, device=None):
         """
         Initialize Whisper contrastive learning model.
         
@@ -31,10 +31,12 @@ class WhisperContrastive(WhisperEmbedding):
             model_name: Whisper model size ('tiny', 'base', 'small', 'medium')
             projection_dim: Dimension of the projection head output (default: 128)
             intermediate_layer: Which encoder layer to extract for taggram
+            device: Device to load model on (default: cuda if available, else cpu)
         """
         super(WhisperContrastive, self).__init__(
             model_name=model_name,
-            intermediate_layer=intermediate_layer
+            intermediate_layer=intermediate_layer,
+            device=device
         )
         
         self.projection_dim = projection_dim

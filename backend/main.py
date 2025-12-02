@@ -3,6 +3,8 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'ML'))
 import torch
 import librosa
+import soundfile as sf
+import warnings
 from models.MusiCNN import Musicnn
 from models.VGG import VGG_Res
 from models.VGGish import VGGish
@@ -25,6 +27,36 @@ SR_MUSICNN = 16000     # Tasa de muestreo que MusiCNN espera
 
 DC = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
+def load_audio_safe(audio_path, sr=None):
+    """
+    Load audio safely without soundfile/audioread warnings.
+    Tries soundfile first (supports WAV/FLAC/OGG), falls back to librosa for MP3/M4A.
+    
+    Args:
+        audio_path: Path to audio file
+        sr: Target sample rate (None = keep original)
+    
+    Returns:
+        y: Audio waveform as numpy array
+        sr: Sample rate
+    """
+    try:
+        # Try soundfile first for supported formats (WAV, FLAC, OGG)
+        y, orig_sr = sf.read(audio_path, dtype='float32')
+        
+        # Resample if needed
+        if sr is not None and sr != orig_sr:
+            y = librosa.resample(y, orig_sr=orig_sr, target_sr=sr)
+            return y, sr
+        return y, orig_sr
+    except:
+        # Fall back to librosa for MP3/M4A (suppress warnings)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=UserWarning)
+            warnings.filterwarnings('ignore', category=FutureWarning)
+            y, loaded_sr = librosa.load(audio_path, sr=sr)
+        return y, loaded_sr
+
 def embeddings_y_taggrams_MusiCNN(pesos, audio, dataset_name='msd', segment_size=None, sr=SR_MUSICNN):
     """
     Extract embeddings and taggrams from full audio using MusiCNN.
@@ -41,12 +73,12 @@ def embeddings_y_taggrams_MusiCNN(pesos, audio, dataset_name='msd', segment_size
         taggrams: (1, n_tags) - single taggram per song
     """
     model = Musicnn(n_class=N_TAGS, dataset=dataset_name) 
-    model.load_state_dict(torch.load(pesos, map_location=DC))
+    model.load_state_dict(torch.load(pesos, map_location=DC, weights_only=True))
     model.to(DC)  # Move model to GPU
     model.eval()
 
     # Load full audio
-    y, _ = librosa.load(audio, sr=sr)
+    y, _ = load_audio_safe(audio, sr=sr)
     
     # Process entire song at once
     with torch.no_grad():
@@ -79,12 +111,12 @@ def embeddings_y_taggrams_VGG(pesos, audio, dataset_name='msd', segment_size=Non
     """
     use_simple = (dataset_name == 'mtat')
     model = VGG_Res(n_class=N_TAGS, use_simple_res=use_simple)
-    model.load_state_dict(torch.load(pesos, map_location=DC))
+    model.load_state_dict(torch.load(pesos, map_location=DC, weights_only=True))
     model.to(DC)
     model.eval()
 
     # Load full audio
-    y, _ = librosa.load(audio, sr=sr)
+    y, _ = load_audio_safe(audio, sr=sr)
     
     # Process entire song at once
     with torch.no_grad():
@@ -119,7 +151,7 @@ def embeddings_y_taggrams_Whisper(model_name, audio, sr=SR_MUSICNN):
     model.eval()
 
     # Load full audio at 16kHz (Whisper's expected sample rate)
-    y, _ = librosa.load(audio, sr=16000)
+    y, _ = load_audio_safe(audio, sr=16000)
     
     # Process entire song at once
     with torch.no_grad():
@@ -165,7 +197,7 @@ def embeddings_y_taggrams_MERT(model_name, audio, sr=SR_MUSICNN):
     model.eval()
 
     # Load audio at original sample rate first
-    y, loaded_sr = librosa.load(audio, sr=None)
+    y, loaded_sr = load_audio_safe(audio, sr=None)
     
     # Convert to tensor
     y_tensor = torch.from_numpy(y).float()
@@ -207,13 +239,13 @@ def embeddings_y_taggrams_WhisperContrastive(pesos, audio, model_name='base', pr
     model = WhisperContrastive(model_name=model_name, projection_dim=projection_dim)
     
     # Load trained weights (projection head)
-    checkpoint = torch.load(pesos, map_location=DC)
+    checkpoint = torch.load(pesos, map_location=DC, weights_only=True)
     model.load_state_dict(checkpoint['model_state_dict'])
     model.to(DC)
     model.eval()
 
     # Load full audio at 16kHz (Whisper's expected sample rate)
-    y, _ = librosa.load(audio, sr=16000)
+    y, _ = load_audio_safe(audio, sr=16000)
     
     # Process entire song at once
     with torch.no_grad():
@@ -259,7 +291,7 @@ def embeddings_y_taggrams_VGGish(model_name, audio, sr=SR_MUSICNN):
     model.eval()
 
     # Load full audio at 16kHz (VGGish's expected sample rate)
-    y, _ = librosa.load(audio, sr=16000)
+    y, _ = load_audio_safe(audio, sr=16000)
     
     # Process entire song at once
     with torch.no_grad():

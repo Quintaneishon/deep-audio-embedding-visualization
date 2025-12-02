@@ -4,6 +4,8 @@ Preprocessing module for batch extracting embeddings, taggrams.
 import os
 import sys
 import csv
+import json
+import subprocess
 import librosa
 from pathlib import Path
 from flask import g
@@ -25,6 +27,35 @@ if torch.cuda.is_available():
     print(f"  Using device: cuda:0")
 else:
     print("⚠ No GPU detected - using CPU (this will be slower)")
+
+def get_audio_duration(audio_path):
+    """
+    Get audio duration using ffprobe (supports all formats: MP3, M4A, WAV, FLAC, OGG, etc.)
+    This avoids the librosa soundfile/audioread deprecation warning.
+    
+    Args:
+        audio_path: Path to audio file
+    
+    Returns:
+        Duration in seconds (float) or None if failed
+    """
+    try:
+        cmd = [
+            'ffprobe',
+            '-v', 'quiet',
+            '-print_format', 'json',
+            '-show_format',
+            str(audio_path)
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        data = json.loads(result.stdout)
+        return float(data['format']['duration'])
+    except Exception as e:
+        # Fallback to librosa if ffprobe fails
+        try:
+            return librosa.get_duration(path=str(audio_path))
+        except:
+            return None
 
 def index_audio_files():
     """
@@ -53,7 +84,7 @@ def index_audio_files():
             # Get audio duration
             try:
                 audio_path = audio_dir / filename
-                duration = librosa.get_duration(path=str(audio_path))
+                duration = get_audio_duration(audio_path)
             except Exception as e:
                 print(f"Warning: Could not get duration for {filename}: {e}")
                 duration = None
@@ -232,7 +263,7 @@ def process_single_track(filename):
     if track is None:
         # Get duration
         try:
-            duration = librosa.get_duration(path=str(audio_path))
+            duration = get_audio_duration(audio_path)
         except Exception as e:
             print(f"Warning: Could not get duration: {e}")
             duration = None

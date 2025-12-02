@@ -13,6 +13,11 @@ import numpy as np
 from torch.utils.data import Dataset
 from pathlib import Path
 from typing import Optional, List, Tuple
+import warnings
+
+# Suppress librosa and soundfile warnings
+warnings.filterwarnings('ignore', message='PySoundFile failed')
+warnings.filterwarnings('ignore', category=FutureWarning, module='librosa')
 
 
 class MTGJamendoDataset(Dataset):

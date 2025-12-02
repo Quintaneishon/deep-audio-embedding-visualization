@@ -336,6 +336,8 @@ def main():
                         help='Directory for TensorBoard logs')
     parser.add_argument('--resume', type=str, default=None,
                         help='Path to checkpoint to resume from')
+    parser.add_argument('--cuda-number', type=str, default=None,
+                        help='CUDA number to use')
     
     args = parser.parse_args()
     
@@ -354,10 +356,12 @@ def main():
     
     # Set device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    if args.cuda_number is not None:
+        device = torch.device(f'cuda:{args.cuda_number}')
     print(f"\nUsing device: {device}")
     if torch.cuda.is_available():
-        print(f"GPU: {torch.cuda.get_device_name(0)}")
-        print(f"GPU Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB\n")
+        print(f"GPU: {torch.cuda.get_device_name(device.index)}")
+        print(f"GPU Memory: {torch.cuda.get_device_properties(device.index).total_memory / 1e9:.2f} GB\n")
     
     # Prepare dataset paths
     data_root = Path(args.data_root)
@@ -411,8 +415,9 @@ def main():
     print("\nInitializing model...")
     model = WhisperContrastive(
         model_name=args.model_name,
-        projection_dim=args.projection_dim
-    ).to(device)
+        projection_dim=args.projection_dim,
+        device=device
+    )
     
     # Create loss function
     criterion = SupConLoss(temperature=args.temperature)

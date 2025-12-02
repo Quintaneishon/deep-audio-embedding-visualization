@@ -1,5 +1,6 @@
 import torch.nn as nn
 import torchaudio
+import warnings
 
 from modules import Res_2d, Res_2d_simple
 
@@ -18,11 +19,14 @@ class VGG_Res(nn.Module):
         # Choose the appropriate residual block based on architecture type
         ResBlock = Res_2d_simple if use_simple_res else Res_2d
 
-        self.spec = torchaudio.transforms.MelSpectrogram(sample_rate=sample_rate,
-                                                        n_fft=n_fft,
-                                                        f_min=f_min,
-                                                        f_max=f_max,
-                                                        n_mels=n_mels)
+        # Suppress mel filterbank warning (n_mels=128 is high for n_fft=512 but intentional)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=UserWarning, message='.*mel filterbank.*')
+            self.spec = torchaudio.transforms.MelSpectrogram(sample_rate=sample_rate,
+                                                            n_fft=n_fft,
+                                                            f_min=f_min,
+                                                            f_max=f_max,
+                                                            n_mels=n_mels)
         self.to_db = torchaudio.transforms.AmplitudeToDB()
         self.spec_bn = nn.BatchNorm2d(1)
 
