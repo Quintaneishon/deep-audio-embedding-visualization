@@ -96,7 +96,7 @@ function App() {
     obtenerTags().then(data => {
       setListaTags(data);
     })
-  }, [])
+  }, [obtenerAudios, obtenerTags])
 
   useEffect(() => {
     if (embeddings1.length > 0) {
@@ -107,7 +107,7 @@ function App() {
       const tracesTaggrams = getTracesBy(agruparPor, taggramData1);
       setTaggrams1(tracesTaggrams);
     }
-  }, [agruparPor])
+  }, [agruparPor, embeddings1, taggramData1, getTracesBy])
 
   return (
     <div className='main'>
