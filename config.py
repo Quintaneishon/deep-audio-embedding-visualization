@@ -96,3 +96,53 @@ CONTRASTIVE_TRAINING = {
 # Model checkpoint path for trained contrastive model
 WHISPER_CONTRASTIVE_WEIGHTS = str(PROJECT_ROOT / 'ML' / 'checkpoints' / 'best_model.pth')
 
+# ============================================================================
+# Lightweight Adapter Configuration
+# ============================================================================
+
+# Lightweight Adapter training hyperparameters
+LIGHTWEIGHT_ADAPTER = {
+    # Model configuration
+    'model_name': 'base',  # Whisper model size: 'tiny', 'base', 'small'
+    'feature_dim': 6,  # Number of acoustic features (centroid, bandwidth, rolloff, zcr, rms, tempo)
+    'projection_dim': 32,  # Dimension to project features to
+    'output_dim': 128,  # Final embedding dimension
+    
+    # Training parameters
+    'batch_size': 12,  # Batch size (optimized for GPU memory with feature extraction)
+    'num_epochs': 35,  # Maximum number of epochs (fewer than WhisperContrastive due to fewer parameters)
+    'learning_rate': 1e-3,  # Initial learning rate
+    'weight_decay': 1e-4,  # L2 regularization
+    
+    # Mixed precision training
+    'mixed_precision': True,  # Use FP16 to reduce memory usage by ~40%
+    
+    # Loss function
+    'temperature': 0.07,  # Temperature for contrastive loss (same as WhisperContrastive)
+    
+    # Data loading
+    'num_workers': 4,  # Number of parallel data loading workers
+    'audio_duration': 30.0,  # Audio duration in seconds
+    'sample_rate': 16000,  # Audio sample rate (Hz)
+    'balanced_sampling': False,  # Use weighted sampling for class balance
+    
+    # Feature extraction
+    'extract_on_fly': False,  # Extract features on-the-fly (slower) or use cache (faster)
+    'feature_cache_dir': str(PROJECT_ROOT / 'ML' / 'features_cache'),  # Directory for cached features
+    'feature_cache_file': str(PROJECT_ROOT / 'ML' / 'features_cache' / 'acoustic_features.h5'),  # HDF5 cache
+    'feature_stats_file': str(PROJECT_ROOT / 'ML' / 'features_cache' / 'feature_stats.json'),  # Normalization stats
+    
+    # Optimization
+    'scheduler': 'plateau',  # LR scheduler: 'plateau', 'cosine', 'step', 'none'
+    'early_stopping_patience': 10,  # Epochs to wait before early stopping
+    
+    # Checkpointing
+    'checkpoint_dir': str(PROJECT_ROOT / 'ML' / 'checkpoints'),
+    'log_dir': str(PROJECT_ROOT / 'ML' / 'logs'),
+    'save_frequency': 1,  # Save checkpoint every N epochs
+}
+
+# Expected trainable parameters: ~70K (vs 262K for WhisperContrastive)
+# Expected VRAM usage: ~1.5-1.8 GB with mixed precision, ~2.5-3.0 GB without
+# Expected training time: 3-4 hours for 35 epochs on CUDA GPU
+
