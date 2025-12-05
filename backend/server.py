@@ -94,9 +94,15 @@ def taggrams():
 
 @app.route('/audio/<path:filename>')
 def serve_audio(filename):
-    """Serve audio files from the audio directory."""
+    """Serve audio files from the audio directory with CORS headers."""
     try:
-        return send_from_directory(config.AUDIO_DIR, filename)
+        response = send_from_directory(config.AUDIO_DIR, filename)
+        # Add CORS headers to allow Web Audio API access
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        response.headers['Cross-Origin-Resource-Policy'] = 'cross-origin'
+        return response
     except Exception as e:
         print(f"Error serving audio file {filename}: {e}")
         return {"error": f"Audio file not found: {filename}"}, 404
