@@ -1,7 +1,7 @@
 import Form from 'react-bootstrap/Form';
 import '../styles/selectorgrafico.css';
 
-export const SelectorGrafico = ({ arquitectura, setArquitectura, dataset, setDataset,tipoGrafica,setTipoGrafica, visualizar,setVisualizar, agruparPor,setAgruparPor, dimensiones,setDimensiones }) => {
+export const SelectorGrafico = ({ arquitectura, setArquitectura, dataset, setDataset,tipoGrafica,setTipoGrafica, visualizar,setVisualizar, agruparPor,setAgruparPor, dimensiones,setDimensiones, renderEngine, setRenderEngine }) => {
 
     const handleArquitecturaChange = (e) => {
         setArquitectura(e.target.value);
@@ -107,6 +107,19 @@ export const SelectorGrafico = ({ arquitectura, setArquitectura, dataset, setDat
                 >
                     <option value="2">2D</option>
                     <option value="3">3D</option>
+                </Form.Select>
+            </div>
+            <div>
+                <p>Render Engine</p>
+                <Form.Select
+                    aria-label="Render Engine"
+                    value={renderEngine}
+                    onChange={(e)=>{
+                        setRenderEngine(e.target.value)
+                    }}
+                >
+                    <option value="plotly">Plotly</option>
+                    <option value="deckgl">Deck.gl (Point Cloud)</option>
                 </Form.Select>
             </div>
         </div>

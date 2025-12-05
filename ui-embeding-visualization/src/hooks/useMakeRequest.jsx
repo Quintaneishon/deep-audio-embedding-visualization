@@ -1,5 +1,5 @@
 export const useMakeRequest = () => {
-    const URL = "http://localhost:5000";
+    const URL = "http://127.0.0.1:5000";
 
     const obtenerAudios = async () => {
         const resp = await fetch(URL + '/audios');
