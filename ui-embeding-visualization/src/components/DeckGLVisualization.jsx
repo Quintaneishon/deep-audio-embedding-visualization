@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import DeckGL from '@deck.gl/react';
 import { PointCloudLayer } from '@deck.gl/layers';
 import { OrbitView } from '@deck.gl/core';
@@ -39,13 +39,17 @@ const getColorForGenre = (genre) => {
 export const DeckGLVisualization = ({
   embeddings,
   dimensiones,
-  agruparPor
 }) => {
   const [viewState, setViewState] = useState(INITIAL_VIEW_STATE);
   const [hoveredPoint, setHoveredPoint] = useState(null);
   const [showVisualizer, setShowVisualizer] = useState(false);
   const [currentAudioUrl, setCurrentAudioUrl] = useState(null);
   const [selectedPointInfo, setSelectedPointInfo] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [blinkingPoint, setBlinkingPoint] = useState(null);
+  const [blinkVisible, setBlinkVisible] = useState(true); // Controls blink on/off state
+  const blinkingRef = useRef(null); // Track the blinking point for the interval
+  const dataZoomRef = useRef(4); // Store the appropriate zoom level for the data scale
 
   // Log when data loads
   useEffect(() => {
@@ -102,6 +106,9 @@ export const DeckGLVisualization = ({
       console.log('Target zoom level:', targetZoom);
       console.log('Total points:', points.length);
 
+      // Store the target zoom for navigation
+      dataZoomRef.current = targetZoom;
+
       // Start at base zoom, then animate to target zoom
       setViewState(prev => ({
         ...prev,
@@ -137,6 +144,63 @@ export const DeckGLVisualization = ({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [showVisualizer]);
+
+  // Filter songs based on search query
+  const filteredSongs = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    
+    const query = searchQuery.toLowerCase();
+    return points.filter(point => 
+      point.name.toLowerCase().includes(query) ||
+      point.tag.toLowerCase().includes(query)
+    ).slice(0, 50); // Limit to 50 results for performance
+  }, [searchQuery, points]);
+
+  // Clear blinking marker when search query changes
+  useEffect(() => {
+    if (searchQuery) {
+      setBlinkingPoint(null);
+    }
+  }, [searchQuery]);
+
+  // Animate the blinking effect by toggling hover on/off
+  useEffect(() => {
+    if (!blinkingPoint) {
+      blinkingRef.current = null;
+      setBlinkVisible(false);
+      return;
+    }
+    
+    blinkingRef.current = blinkingPoint;
+    let isOn = true;
+    setBlinkVisible(true);
+    
+    const interval = setInterval(() => {
+      if (blinkingRef.current) {
+        isOn = !isOn;
+        setBlinkVisible(isOn);
+        setHoveredPoint(isOn ? blinkingRef.current : null);
+      }
+    }, 600); // Toggle every 600ms for slower, easier to click blinking
+    
+    return () => clearInterval(interval);
+  }, [blinkingPoint]);
+
+  // Navigate to a specific point without playing audio
+  const navigateToPoint = (point) => {
+    setViewState(prev => ({
+      ...prev,
+      target: point.position,
+      zoom: dataZoomRef.current + 4, // Zoom in much closer to the point
+      transitionDuration: 1000 // Smooth 1 second animation
+    }));
+    
+    // Set blinking marker (stays until user clicks a point or searches again)
+    setBlinkingPoint(point);
+    setHoveredPoint(point);
+    
+    console.log('Navigated to:', point.name);
+  };
 
   const layers = [
     new PointCloudLayer({
@@ -175,8 +239,50 @@ export const DeckGLVisualization = ({
           }
         }
       }
+    }),
+    // Blinking marker layer - shows a large bright marker at the searched point
+    blinkingPoint && blinkVisible && new PointCloudLayer({
+      id: 'blinking-marker-layer',
+      data: [blinkingPoint],
+      getPosition: d => d.position,
+      getColor: [255, 255, 0], // Bright yellow
+      pointSize: 9, // Much larger than regular points
+      pickable: true,
+      onClick: (info) => {
+        if (info.object) {
+          const point = info.object;
+          console.log('Clicked blinking marker:', point.name, point.tag);
+          if (point.audio) {
+            const audioUrl = `http://127.0.0.1:5000/audio/${point.audio}`;
+            setCurrentAudioUrl(audioUrl);
+            setSelectedPointInfo({ name: point.name, tag: point.tag, position: point.position });
+            setShowVisualizer(true);
+          }
+        }
+      }
+    }),
+    // Outer ring effect for blinking marker
+    blinkingPoint && !blinkVisible && new PointCloudLayer({
+      id: 'blinking-marker-ring-layer',
+      data: [blinkingPoint],
+      getPosition: d => d.position,
+      getColor: [255, 100, 0], // Orange when "off"
+      pointSize: 8,
+      pickable: true,
+      onClick: (info) => {
+        if (info.object) {
+          const point = info.object;
+          console.log('Clicked blinking marker:', point.name, point.tag);
+          if (point.audio) {
+            const audioUrl = `http://127.0.0.1:5000/audio/${point.audio}`;
+            setCurrentAudioUrl(audioUrl);
+            setSelectedPointInfo({ name: point.name, tag: point.tag, position: point.position });
+            setShowVisualizer(true);
+          }
+        }
+      }
     })
-  ];
+  ].filter(Boolean);
 
   return (
     <div className="deckgl-container">
@@ -213,32 +319,45 @@ export const DeckGLVisualization = ({
         )}
       </DeckGL>
 
-      {/* Three.js Audio Visualizer */}
+      {/* Embedded Audio Visualizer Panel - Bottom Right */}
       {showVisualizer && currentAudioUrl && selectedPointInfo && (
-        <ThreeAudioVisualizer
-          audioUrl={currentAudioUrl}
-          songName={selectedPointInfo.name}
-          genre={selectedPointInfo.tag}
-          coordinates={selectedPointInfo.position}
-          onClose={() => {
-            setShowVisualizer(false);
-            setCurrentAudioUrl(null);
-            setSelectedPointInfo(null);
-          }}
-        />
+        <div className="visualizer-panel" style={{
+          position: 'absolute',
+          bottom: 10,
+          right: 10,
+          width: '340px',
+          height: '180px',
+          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+          borderRadius: '8px',
+          zIndex: 1,
+          overflow: 'hidden',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)'
+        }}>
+          <ThreeAudioVisualizer
+            audioUrl={currentAudioUrl}
+            songName={selectedPointInfo.name}
+            genre={selectedPointInfo.tag}
+            coordinates={selectedPointInfo.position}
+            onClose={() => {
+              setShowVisualizer(false);
+              setCurrentAudioUrl(null);
+              setSelectedPointInfo(null);
+            }}
+          />
+        </div>
       )}
 
       {/* Legend */}
       <div className="legend" style={{
         position: 'absolute',
-        top: 80,
+        top: 60,
         right: 10,
         backgroundColor: 'rgba(0, 0, 0, 0.8)',
         color: 'white',
         padding: '12px',
         borderRadius: '4px',
         fontSize: '12px',
-        maxHeight: '80vh',
+        maxHeight: 'calc(100vh - 220px)',
         overflowY: 'auto',
         zIndex: 1
       }}>
@@ -257,24 +376,116 @@ export const DeckGLVisualization = ({
         ))}
       </div>
 
-      {/* Instructions */}
-      <div className="instructions" style={{
+      {/* Search Panel */}
+      <div className="search-panel" style={{
         position: 'absolute',
         bottom: 10,
         left: 10,
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        backgroundColor: 'rgba(0, 0, 0, 0.9)',
         color: 'white',
-        padding: '10px',
-        borderRadius: '4px',
-        fontSize: '11px',
-        zIndex: 1
+        padding: '12px',
+        borderRadius: '8px',
+        fontSize: '13px',
+        zIndex: 1,
+        width: '320px',
+        maxHeight: '400px',
+        display: 'flex',
+        flexDirection: 'column',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
       }}>
-        <div><strong>Controls:</strong></div>
-        <div>• Left click + drag: Rotate</div>
-        <div>• Right click + drag: Pan</div>
-        <div>• Scroll: Zoom</div>
-        <div>• Click point: Open visualizer</div>
-        <div>• ESC: Close visualizer</div>
+        <div style={{ marginBottom: '8px', fontWeight: 'bold', fontSize: '14px' }}>
+        Search Songs
+        </div>
+        
+        <input
+          type="text"
+          placeholder="Type song name or genre..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          style={{
+            padding: '8px 12px',
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            border: '1px solid rgba(255, 255, 255, 0.3)',
+            borderRadius: '4px',
+            color: 'white',
+            fontSize: '13px',
+            outline: 'none',
+            marginBottom: '8px'
+          }}
+        />
+        
+        {searchQuery && (
+          <div style={{
+            fontSize: '11px',
+            opacity: 0.7,
+            marginBottom: '8px'
+          }}>
+            {filteredSongs.length} {filteredSongs.length === 1 ? 'result' : 'results'} found
+          </div>
+        )}
+        
+        {searchQuery && filteredSongs.length > 0 && (
+          <div style={{
+            overflowY: 'auto',
+            maxHeight: '280px',
+            marginTop: '4px'
+          }}>
+            {filteredSongs.map((point, index) => (
+              <div
+                key={point.id}
+                onClick={() => navigateToPoint(point)}
+                style={{
+                  padding: '8px',
+                  marginBottom: '4px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  border: '1px solid transparent'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.15)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                  e.currentTarget.style.borderColor = 'transparent';
+                }}
+              >
+                <div style={{ fontWeight: '500', marginBottom: '2px' }}>
+                  {point.name}
+                </div>
+                <div style={{
+                  fontSize: '11px',
+                  opacity: 0.7,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <span style={{
+                    display: 'inline-block',
+                    width: '8px',
+                    height: '8px',
+                    backgroundColor: `rgb(${point.color[0]}, ${point.color[1]}, ${point.color[2]})`,
+                    borderRadius: '50%'
+                  }} />
+                  {point.tag}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        
+        {searchQuery && filteredSongs.length === 0 && (
+          <div style={{
+            padding: '16px',
+            textAlign: 'center',
+            opacity: 0.6,
+            fontSize: '12px'
+          }}>
+            No songs found matching "{searchQuery}"
+          </div>
+        )}
       </div>
     </div>
   );
