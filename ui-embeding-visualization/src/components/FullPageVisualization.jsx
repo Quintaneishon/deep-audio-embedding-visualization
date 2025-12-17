@@ -7,32 +7,34 @@ export const FullPageVisualization = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchEmbeddings = async () => {
-      try {
-        setLoading(true);
-        const url = 'http://127.0.0.1:5000/embeddings?red=whisper_contrastive&dataset=base&metodo=umap&dimensions=3';
-        console.log('Fetching embeddings from:', url);
-        
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const result = await response.json();
-        console.log('Embeddings loaded:', result.data?.length || 0, 'points');
-        
-        setEmbeddings(result.data || []);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching embeddings:', err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
+  const fetchEmbeddings = async () => {
+    try {
+      setLoading(true);
+      const url = 'http://127.0.0.1:5000/embeddings?red=whisper_contrastive&dataset=base&metodo=umap&dimensions=3';
+      console.log('Fetching embeddings from:', url);
+      
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    };
+      
+      const result = await response.json();
+      console.log('Embeddings loaded:', result.data?.length || 0, 'points');
+      
+      setEmbeddings(result.data || []);
+      setError(null);
+      return result.data || [];
+    } catch (err) {
+      console.error('Error fetching embeddings:', err);
+      setError(err.message);
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchEmbeddings();
   }, []);
 
@@ -93,6 +95,7 @@ export const FullPageVisualization = () => {
           embeddings={embeddings}
           dimensiones={3}
           agruparPor="tag"
+          onRefetchEmbeddings={fetchEmbeddings}
         />
       </div>
     </div>

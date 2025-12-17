@@ -39,6 +39,7 @@ const getColorForGenre = (genre) => {
 export const DeckGLVisualization = ({
   embeddings,
   dimensiones,
+  onRefetchEmbeddings,
 }) => {
   const [viewState, setViewState] = useState(INITIAL_VIEW_STATE);
   const [hoveredPoint, setHoveredPoint] = useState(null);
@@ -50,6 +51,9 @@ export const DeckGLVisualization = ({
   const [blinkVisible, setBlinkVisible] = useState(true); // Controls blink on/off state
   const blinkingRef = useRef(null); // Track the blinking point for the interval
   const dataZoomRef = useRef(4); // Store the appropriate zoom level for the data scale
+  const [isUploading, setIsUploading] = useState(false);
+  const [toast, setToast] = useState(null);
+  const fileInputRef = useRef(null);
 
   // Log when data loads
   useEffect(() => {
@@ -186,6 +190,94 @@ export const DeckGLVisualization = ({
     return () => clearInterval(interval);
   }, [blinkingPoint]);
 
+  // Show toast notification
+  const showToast = (message, type = 'error') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 5000); // Auto-dismiss after 5 seconds
+  };
+
+  // Handle file upload
+  const handleFileUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.name.toLowerCase().endsWith('.mp3')) {
+      showToast('Only MP3 files are supported', 'error');
+      return;
+    }
+
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      console.log('Uploading file:', file.name);
+      const response = await fetch('http://127.0.0.1:5000/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+      console.log('Upload response:', result);
+
+      // Check if the response was successful (status 200-299)
+      if (!response.ok) {
+        console.error('Upload failed with status:', response.status);
+        showToast(result.error || `Upload failed with status ${response.status}`, 'error');
+        return;
+      }
+
+      if (result.success) {
+        showToast('Song uploaded successfully!', 'success');
+        
+        // Refetch embeddings
+        if (onRefetchEmbeddings) {
+          console.log('Refetching embeddings...');
+          const newEmbeddings = await onRefetchEmbeddings();
+          
+          // Find the newly added song by filename
+          if (newEmbeddings && newEmbeddings.length > 0) {
+            const newSong = newEmbeddings.find(emb => emb.audio === result.filename);
+            if (newSong) {
+              console.log('Found new song:', newSong.name);
+              // Transform to point format and navigate
+              const newPoint = {
+                position: dimensiones === 3 
+                  ? [newSong.coords[0], newSong.coords[1], newSong.coords[2] || 0]
+                  : [newSong.coords[0], newSong.coords[1], 0],
+                color: getColorForGenre(newSong.tag),
+                name: newSong.name,
+                tag: newSong.tag,
+                audio: newSong.audio,
+                id: `${newSong.name}_new`
+              };
+              
+              // Navigate to the new song
+              setTimeout(() => {
+                navigateToPoint(newPoint);
+              }, 500);
+            } else {
+              console.warn('Could not find newly uploaded song in embeddings');
+            }
+          }
+        }
+      } else {
+        console.error('Upload result indicated failure:', result);
+        showToast(result.error || 'Failed to upload file', 'error');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      showToast(`Error: ${error.message}`, 'error');
+    } finally {
+      setIsUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   // Navigate to a specific point without playing audio
   const navigateToPoint = (point) => {
     setViewState(prev => ({
@@ -286,6 +378,69 @@ export const DeckGLVisualization = ({
 
   return (
     <div className="deckgl-container">
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".mp3"
+        onChange={handleFileUpload}
+        style={{ display: 'none' }}
+      />
+
+      {/* Loading Overlay */}
+      {isUploading && (
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 100,
+          color: 'white'
+        }}>
+          <div style={{
+            width: '50px',
+            height: '50px',
+            border: '5px solid rgba(255, 255, 255, 0.3)',
+            borderTop: '5px solid white',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite'
+          }} />
+          <p style={{ marginTop: '20px', fontSize: '16px' }}>
+            Processing audio file...
+          </p>
+          <p style={{ marginTop: '8px', fontSize: '12px', opacity: 0.7 }}>
+            This may take a few minutes
+          </p>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div style={{
+          position: 'absolute',
+          top: '70px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: toast.type === 'error' ? 'rgba(220, 38, 38, 0.95)' : 'rgba(34, 197, 94, 0.95)',
+          color: 'white',
+          padding: '12px 24px',
+          borderRadius: '8px',
+          fontSize: '14px',
+          zIndex: 1000,
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
+          maxWidth: '400px',
+          textAlign: 'center'
+        }}>
+          {toast.message}
+        </div>
+      )}
+
       <DeckGL
         views={new OrbitView()}
         viewState={viewState}
@@ -393,6 +548,47 @@ export const DeckGLVisualization = ({
         flexDirection: 'column',
         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
       }}>
+        {/* Upload Button - Top Right of Search Panel */}
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isUploading}
+          style={{
+            position: 'absolute',
+            top: '-18px',
+            right: '-18px',
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            backgroundColor: isUploading ? 'rgba(100, 100, 100, 0.9)' : 'rgba(0, 0, 0, 0.9)',
+            border: '2px solid rgba(255, 255, 255, 0.3)',
+            color: 'white',
+            fontSize: '22px',
+            fontWeight: 'bold',
+            cursor: isUploading ? 'not-allowed' : 'pointer',
+            zIndex: 10,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
+          }}
+          onMouseEnter={(e) => {
+            if (!isUploading) {
+              e.currentTarget.style.backgroundColor = 'rgba(50, 50, 50, 0.9)';
+              e.currentTarget.style.transform = 'scale(1.05)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isUploading) {
+              e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+              e.currentTarget.style.transform = 'scale(1)';
+            }
+          }}
+          title="Upload MP3 file"
+        >
+          {isUploading ? '...' : '+'}
+        </button>
+
         <div style={{ marginBottom: '8px', fontWeight: 'bold', fontSize: '14px' }}>
         Search Songs
         </div>
