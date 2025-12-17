@@ -67,7 +67,7 @@ class AcousticFeatureExtractor:
         """
         # Load audio if path is provided
         if isinstance(audio, (str, Path)):
-            y, sr = librosa.load(audio, sr=self.sample_rate, mono=True)
+            y, sr = librosa.load(audio, sr=self.sample_rate, mono=True, res_type='kaiser_fast')
         elif isinstance(audio, torch.Tensor):
             y = audio.cpu().numpy()
             sr = self.sample_rate

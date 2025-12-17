@@ -41,6 +41,8 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             filename TEXT UNIQUE NOT NULL,
             duration REAL,
+            spectral_centroid REAL,
+            tempo REAL,
             processed_at TIMESTAMP,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
@@ -331,6 +333,67 @@ def get_tags():
 # ============================================================================
 # Database Maintenance Functions
 # ============================================================================
+
+def migrate_add_acoustic_features():
+    """
+    Add spectral_centroid and tempo columns to tracks table if they don't exist.
+    This is a migration function for existing databases.
+    """
+    db = sqlite3.connect(config.DATABASE_PATH)
+    cursor = db.cursor()
+    
+    try:
+        # Check if columns exist
+        cursor.execute("PRAGMA table_info(tracks)")
+        columns = [col[1] for col in cursor.fetchall()]
+        
+        # Add spectral_centroid if missing
+        if 'spectral_centroid' not in columns:
+            cursor.execute('ALTER TABLE tracks ADD COLUMN spectral_centroid REAL')
+            print("Added spectral_centroid column to tracks table")
+        
+        # Add tempo if missing
+        if 'tempo' not in columns:
+            cursor.execute('ALTER TABLE tracks ADD COLUMN tempo REAL')
+            print("Added tempo column to tracks table")
+        
+        db.commit()
+        db.close()
+        print("Database migration completed successfully")
+        return True
+    except Exception as e:
+        db.rollback()
+        db.close()
+        print(f"Migration error: {e}")
+        return False
+
+
+def update_track_acoustic_features(track_id, spectral_centroid, tempo):
+    """
+    Update acoustic features for a track.
+    
+    Args:
+        track_id: Track ID
+        spectral_centroid: Mean spectral centroid (Hz)
+        tempo: Tempo (BPM)
+    """
+    db = get_db()
+    db.execute(
+        'UPDATE tracks SET spectral_centroid = ?, tempo = ? WHERE id = ?',
+        (spectral_centroid, tempo, track_id)
+    )
+    db.commit()
+
+
+def get_track_with_features(track_id):
+    """Get track record with acoustic features."""
+    db = get_db()
+    track = db.execute(
+        'SELECT * FROM tracks WHERE id = ?',
+        (track_id,)
+    ).fetchone()
+    return track
+
 
 def clean_db(drop_tables=False):
     """

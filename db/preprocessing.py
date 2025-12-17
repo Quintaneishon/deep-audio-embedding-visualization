@@ -8,16 +8,14 @@ import json
 import subprocess
 import librosa
 from pathlib import Path
-from flask import g
 from tqdm import tqdm
 import config
 import database
 from main import embeddings_y_taggrams_MusiCNN, embeddings_y_taggrams_VGG, embeddings_y_taggrams_Whisper, embeddings_y_taggrams_MERT, embeddings_y_taggrams_WhisperContrastive, embeddings_y_taggrams_VGGish
-import numpy as np
-from sklearn.metrics.pairwise import cosine_similarity
 import torch
 import gc
 from db.utils import process_model_dataset_combination
+from ML.acoustic_features import AcousticFeatureExtractor
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
@@ -313,6 +311,88 @@ def process_single_track(filename):
     print("=" * 60)
     
     return success_count > 0
+
+
+def extract_and_store_acoustic_features():
+    """
+    Extract acoustic features (spectral_centroid and tempo) for all tracks
+    and store them in the database.
+    
+    Uses AcousticFeatureExtractor to extract:
+    - spectral_centroid (index 0): Mean spectral centroid in Hz
+    - tempo (index 5): Estimated tempo in BPM
+    
+    Returns:
+        Dictionary with extraction statistics
+    """
+    print("\n" + "=" * 60)
+    print("EXTRACTING ACOUSTIC FEATURES")
+    print("=" * 60)
+    
+    # Ensure database schema is up to date
+    database.migrate_add_acoustic_features()
+    
+    # Get all tracks
+    tracks = database.get_all_tracks()
+    
+    if not tracks:
+        print("No tracks found in database. Run 'flask index-audio' first.")
+        return {'tracks_processed': 0, 'tracks_skipped': 0, 'errors': 0}
+    
+    # Initialize feature extractor
+    extractor = AcousticFeatureExtractor(sample_rate=config.SAMPLE_RATE)
+    
+    stats = {
+        'tracks_processed': 0,
+        'tracks_skipped': 0,
+        'errors': 0
+    }
+    
+    print(f"\nProcessing {len(tracks)} tracks...")
+    
+    for track in tqdm(tracks, desc="Extracting features", unit="track"):
+        track_id = track['id']
+        filename = track['filename']
+        
+        # Skip if features already exist
+        if track['spectral_centroid'] is not None and track['tempo'] is not None:
+            stats['tracks_skipped'] += 1
+            continue
+        
+        audio_path = Path(config.AUDIO_DIR) / filename
+        
+        if not audio_path.exists():
+            print(f"\n  Warning: Audio file not found: {audio_path}")
+            stats['errors'] += 1
+            continue
+        
+        try:
+            # Extract features (no normalization needed for storage)
+            features = extractor.extract_features(str(audio_path), normalize=False)
+            
+            # Extract specific features we need
+            spectral_centroid = float(features[0])  # Index 0: spectral_centroid
+            tempo = float(features[5])  # Index 5: tempo
+            
+            # Update database
+            database.update_track_acoustic_features(track_id, spectral_centroid, tempo)
+            
+            stats['tracks_processed'] += 1
+            
+        except Exception as e:
+            print(f"\n  Error processing {filename}: {e}")
+            stats['errors'] += 1
+    
+    print("\n" + "=" * 60)
+    print("ACOUSTIC FEATURE EXTRACTION COMPLETE")
+    print("=" * 60)
+    print(f"Processed: {stats['tracks_processed']}")
+    print(f"Skipped (already exists): {stats['tracks_skipped']}")
+    print(f"Errors: {stats['errors']}")
+    print("=" * 60)
+    
+    return stats
+
 
 def compute_genre_similarity_scores():
     """

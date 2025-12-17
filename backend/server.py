@@ -4,6 +4,7 @@ from werkzeug.utils import secure_filename
 import os
 import click
 import sys
+from datetime import datetime
 sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'db'))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'ML'))
@@ -166,6 +167,19 @@ def index_audio_command():
         click.echo(f'Indexed {count} new audio files.')
 
 
+@app.cli.command('extract-acoustic-features')
+def extract_acoustic_features_command():
+    """Extract acoustic features (spectral centroid and tempo) for all tracks."""
+    with app.app_context():
+        click.echo('Extracting acoustic features for all tracks...')
+        click.echo('This extracts spectral centroid and tempo using librosa.')
+        stats = preprocessing.extract_and_store_acoustic_features()
+        click.echo('\nAcoustic feature extraction complete!')
+        click.echo(f"  Tracks processed: {stats['tracks_processed']}")
+        click.echo(f"  Tracks skipped (already exists): {stats['tracks_skipped']}")
+        click.echo(f"  Errors: {stats['errors']}")
+
+
 @app.cli.command('preprocess-all')
 def preprocess_all_command():
     """Extract embeddings and taggrams for all tracks."""
@@ -199,17 +213,40 @@ def compute_genre_similarity_command():
         click.echo('Computing genre similarity scores...')
         results = preprocessing.compute_genre_similarity_scores()
         
-        click.echo('\n=== Summary ===')
-        for combo_key, data in results.items():
-            stats = data['aggregate_stats']
-            click.echo(f"\n{combo_key}:")
-            click.echo(f"  Songs analyzed: {stats['total_songs']}")
-            click.echo(f"  EMBEDDING-BASED:")
-            click.echo(f"    Mean similarity to own genre: {stats['emb_mean_similarity_to_own_genre']:.4f}")
-            click.echo(f"    Agreement rate: {stats['emb_agreement_rate']:.2%}")
-            click.echo(f"  TAGGRAM-BASED:")
-            click.echo(f"    Mean similarity to own genre: {stats['tag_mean_similarity_to_own_genre']:.4f}")
-            click.echo(f"    Agreement rate: {stats['tag_agreement_rate']:.2%}")
+        # Create reports directory if it doesn't exist
+        reports_dir = os.path.join(os.path.dirname(__file__), '../reports')
+        os.makedirs(reports_dir, exist_ok=True)
+        
+        # Generate filename
+        output_file = os.path.join(reports_dir, f'genre_similarity_report.txt')
+        
+        # Write results to file
+        with open(output_file, 'w') as f:
+            f.write('=== Genre Similarity Analysis Report ===\n')
+            f.write(f'Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n')
+            f.write('\n=== Summary ===\n')
+            
+            for combo_key, data in results.items():
+                stats = data['aggregate_stats']
+                f.write(f"\n{combo_key}:\n")
+                f.write(f"  Songs analyzed: {stats['total_songs']}\n")
+                f.write(f"  EMBEDDING-BASED:\n")
+                f.write(f"    Mean similarity to own genre: {stats['emb_mean_similarity_to_own_genre']:.4f}\n")
+                f.write(f"    Agreement rate: {stats['emb_agreement_rate']:.2%}\n")
+                f.write(f"  TAGGRAM-BASED:\n")
+                f.write(f"    Mean similarity to own genre: {stats['tag_mean_similarity_to_own_genre']:.4f}\n")
+                f.write(f"    Agreement rate: {stats['tag_agreement_rate']:.2%}\n")
+                
+                # Display MAP@K metrics if available
+                if 'map_at_k_genre_precision' in stats:
+                    k_value = stats.get('map_at_k_k_value', 10)
+                    n_songs = stats.get('map_at_k_n_songs_evaluated', 0)
+                    f.write(f"  MAP@{k_value} (K-NEAREST NEIGHBORS):\n")
+                    f.write(f"    Songs evaluated: {n_songs}\n")
+                    f.write(f"    Genre Precision: {stats['map_at_k_genre_precision']:.4f}\n")
+                    f.write(f"    Physical Error: {stats['map_at_k_mean_physical_error']:.4f}\n")
+        
+        click.echo(f'Report saved to: {output_file}')
 
 @app.cli.command('clean-db')
 @click.option('--drop-tables', is_flag=True, default=False, help='Drop all tables before cleaning')
