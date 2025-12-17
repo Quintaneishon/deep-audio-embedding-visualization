@@ -1,5 +1,6 @@
 from flask import Flask, request, g, send_from_directory
 from flask_cors import CORS
+from werkzeug.utils import secure_filename
 import os
 import click
 import sys
@@ -106,6 +107,45 @@ def serve_audio(filename):
     except Exception as e:
         print(f"Error serving audio file {filename}: {e}")
         return {"error": f"Audio file not found: {filename}"}, 404
+
+@app.route('/upload', methods=['POST'])
+def upload_audio():
+    """Upload and process a new audio file."""
+    try:
+        # Check if file is in request
+        if 'file' not in request.files:
+            return {'success': False, 'error': 'No file provided'}, 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return {'success': False, 'error': 'No file selected'}, 400
+        
+        # Validate MP3 format
+        if not file.filename.lower().endswith('.mp3'):
+            return {'success': False, 'error': 'Only MP3 files are supported'}, 400
+        
+        # Secure the filename and save
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(config.AUDIO_DIR, filename)
+        
+        # Save file (overwrite if exists)
+        file.save(filepath)
+        print(f"Saved uploaded file: {filename}")
+        
+        # Process the track to extract embeddings
+        print(f"Starting embedding extraction for: {filename}")
+        success = preprocessing.process_single_track(filename)
+        
+        if success:
+            print(f"Successfully processed: {filename}")
+            return {'success': True, 'filename': filename}, 200
+        else:
+            print(f"Failed to process: {filename}")
+            return {'success': False, 'error': 'Failed to process audio file'}, 500
+            
+    except Exception as e:
+        print(f"Error in upload_audio: {e}")
+        return {'success': False, 'error': str(e)}, 500
 
 # ============================================================================
 # Flask CLI Commands for Preprocessing
