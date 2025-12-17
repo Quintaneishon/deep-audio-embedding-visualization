@@ -277,21 +277,34 @@ def process_single_track(filename):
     print("-" * 60)
     
     success_count = 0
-    total_count = len(config.MODELS) * len(config.DATASETS)
+    conv_model_dataset_combinations = [(m, d) for m in config.CONV_MODELS for d in config.DATASETS]
+    total_count = len(conv_model_dataset_combinations) + len(config.TRANF_MODELS)
     
-    # Process for each model/dataset combination
-    for model in config.MODELS:
-        for dataset in config.DATASETS:
-            print(f"\n{model}/{dataset}:")
-            
-            # Extract embeddings and taggrams
-            embedding_id, success = extract_embeddings_for_track(
-                track_id, model, dataset
-            )
-            
-            if success:
-                success_count += 1
+    # Process convolutional models with datasets
+    for model, dataset in conv_model_dataset_combinations:
+        print(f"\n{model}/{dataset}:")
+        
+        # Extract embeddings and taggrams
+        embedding_id, success = extract_embeddings_for_track(
+            track_id, model, dataset
+        )
+        
+        if success:
+            success_count += 1
     
+    # Process transformer models with model sizes
+    for i, model in enumerate(config.TRANF_MODELS):
+        model_size = config.MODEL_SIZES[i]
+        print(f"\n{model}/{model_size}:")
+        
+        # Extract embeddings and taggrams
+        embedding_id, success = extract_embeddings_for_track(
+            track_id, model, model_size
+        )
+        
+        if success:
+            success_count += 1
+
     # Mark track as processed
     database.mark_track_processed(track_id)
     
