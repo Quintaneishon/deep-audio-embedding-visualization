@@ -12,7 +12,6 @@ export const ThreeAudioVisualizer = ({ audioUrl, songName, genre, coordinates, o
   const animationFrameRef = useRef(null);
   const audioElementRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -21,7 +20,7 @@ export const ThreeAudioVisualizer = ({ audioUrl, songName, genre, coordinates, o
 
     // Initialize Three.js scene
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x000033);
+    scene.background = new THREE.Color(0x0a0a1a);
     sceneRef.current = scene;
 
     // Setup orthographic camera for full-screen effect
@@ -47,8 +46,8 @@ export const ThreeAudioVisualizer = ({ audioUrl, songName, genre, coordinates, o
 
     // Create canvas for spectrum visualization
     const canvas = document.createElement('canvas');
-    canvas.width = 1024;
-    canvas.height = 512;
+    canvas.width = 512;
+    canvas.height = 256;
     const ctx = canvas.getContext('2d');
     
     // Create texture from canvas
@@ -75,28 +74,36 @@ export const ThreeAudioVisualizer = ({ audioUrl, songName, genre, coordinates, o
 
         // Clear canvas with gradient background
         const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-        gradient.addColorStop(0, '#000033');
-        gradient.addColorStop(1, '#000011');
+        gradient.addColorStop(0, '#0a0a1a');
+        gradient.addColorStop(0.5, '#0d0d25');
+        gradient.addColorStop(1, '#0a0a1a');
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Draw spectrum
+        // Draw spectrum with circular/wave style for embedded view
         const barWidth = canvas.width / dataArray.length;
-        let x = 0;
-
+        const centerY = canvas.height / 2;
+        
         for (let i = 0; i < dataArray.length; i++) {
-          const barHeight = (dataArray[i] / 255) * canvas.height;
+          const barHeight = (dataArray[i] / 255) * (canvas.height * 0.45);
           
-          // Create color based on frequency intensity
-          const hue = (i / dataArray.length) * 360;
+          // Create color based on frequency intensity with cyan/magenta theme
+          const hue = 180 + (i / dataArray.length) * 60; // Cyan to blue range
           const intensity = dataArray[i] / 255;
-          ctx.fillStyle = `hsl(${hue}, 100%, ${intensity * 50 + 25}%)`;
           
-          // Draw bar from bottom
-          ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+          // Draw mirrored bars from center
+          const gradient2 = ctx.createLinearGradient(0, centerY - barHeight, 0, centerY + barHeight);
+          gradient2.addColorStop(0, `hsla(${hue}, 100%, ${intensity * 60 + 20}%, 0.9)`);
+          gradient2.addColorStop(0.5, `hsla(${hue + 30}, 100%, ${intensity * 70 + 30}%, 1)`);
+          gradient2.addColorStop(1, `hsla(${hue}, 100%, ${intensity * 60 + 20}%, 0.9)`);
           
-          x += barWidth;
+          ctx.fillStyle = gradient2;
+          ctx.fillRect(i * barWidth, centerY - barHeight, barWidth - 1, barHeight * 2);
         }
+
+        // Add glow effect
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = 'rgba(0, 255, 255, 0.3)';
 
         // Update texture
         texture.needsUpdate = true;
@@ -171,7 +178,6 @@ export const ThreeAudioVisualizer = ({ audioUrl, songName, genre, coordinates, o
 
       audio.addEventListener('error', (e) => {
         console.error('Audio error:', e);
-        setError('Failed to load audio');
         setIsPlaying(false);
       });
 
@@ -180,7 +186,6 @@ export const ThreeAudioVisualizer = ({ audioUrl, songName, genre, coordinates, o
       setIsPlaying(true);
     } catch (err) {
       console.error('Error playing audio:', err);
-      setError('Failed to play audio: ' + err.message);
       setIsPlaying(false);
     }
   };
@@ -227,146 +232,97 @@ export const ThreeAudioVisualizer = ({ audioUrl, songName, genre, coordinates, o
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [audioUrl]);
 
+  // Always render as embedded panel
   return (
-    <div 
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-        zIndex: 1000,
+    <div style={{
+      width: '100%',
+      height: '100%',
+      backgroundColor: 'rgba(0, 0, 0, 0.95)',
+      borderRadius: '8px',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden',
+      border: '1px solid rgba(0, 255, 255, 0.25)',
+      boxShadow: '0 4px 20px rgba(0, 255, 255, 0.1)'
+    }}>
+      {/* Compact Header */}
+      <div style={{
+        padding: '10px 12px',
+        color: 'white',
         display: 'flex',
+        justifyContent: 'space-between',
         alignItems: 'center',
-        justifyContent: 'center',
-        backdropFilter: 'blur(5px)'
-      }}
-      onClick={handleClose}
-    >
-      {/* Popup Container */}
-      <div 
-        style={{
-          width: '80%',
-          maxWidth: '1000px',
-          height: '80%',
-          maxHeight: '700px',
-          backgroundColor: '#000033',
-          borderRadius: '12px',
-          boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          border: '2px solid rgba(0, 255, 255, 0.3)'
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div style={{
-          padding: '15px 20px',
-          color: 'white',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          borderBottom: '1px solid rgba(0, 255, 255, 0.3)'
-        }}>
-          <div style={{ flex: 1 }}>
-            <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', marginBottom: '5px' }}>
-              {songName}
-            </h2>
-            <div style={{ fontSize: '13px', color: '#aaa', display: 'flex', gap: '15px' }}>
-              <span><strong>Genre:</strong> {genre}</span>
-              <span><strong>Position:</strong> ({coordinates[0].toFixed(2)}, {coordinates[1].toFixed(2)}{coordinates[2] !== 0 ? `, ${coordinates[2].toFixed(2)}` : ''})</span>
-            </div>
+        backgroundColor: 'rgba(0, 20, 40, 0.8)',
+        borderBottom: '1px solid rgba(0, 255, 255, 0.2)'
+      }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ 
+            fontSize: '13px', 
+            fontWeight: '600', 
+            marginBottom: '2px',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            color: '#00ffff'
+          }}>
+            {songName}
           </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            {isPlaying ? (
-              <button
-                onClick={stopAudio}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#ff4444',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  transition: 'background-color 0.2s'
-                }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = '#ff6666'}
-                onMouseLeave={(e) => e.target.style.backgroundColor = '#ff4444'}
-              >
-                ⏸ Pause
-              </button>
-            ) : (
-              <button
-                onClick={playAudio}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#44ff44',
-                  color: '#000',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  transition: 'background-color 0.2s'
-                }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = '#66ff66'}
-                onMouseLeave={(e) => e.target.style.backgroundColor = '#44ff44'}
-              >
-                ▶ Play
-              </button>
-            )}
-            <button
-              onClick={handleClose}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#666',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '13px',
-                fontWeight: '600',
-                transition: 'background-color 0.2s'
-              }}
-              onMouseEnter={(e) => e.target.style.backgroundColor = '#888'}
-              onMouseLeave={(e) => e.target.style.backgroundColor = '#666'}
-            >
-              ✕ Close
-            </button>
+          <div style={{ fontSize: '11px', color: '#888' }}>
+            {genre}
           </div>
         </div>
-
-        {/* Visualization container */}
-        <div
-          ref={containerRef}
-          style={{
-            flex: 1,
-            width: '100%',
-            position: 'relative'
-          }}
-        />
-
-        {/* Info overlay */}
-        <div style={{
-          padding: '12px 20px',
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          color: 'white',
-          fontSize: '12px',
-          textAlign: 'center',
-          borderTop: '1px solid rgba(0, 255, 255, 0.3)'
-        }}>
-          {error ? (
-            <span style={{ color: '#ff4444' }}>⚠️ {error}</span>
-          ) : !isPlaying && (
-            <span style={{ color: '#aaa' }}>Click Play to start</span>
-          )}
+        <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+          <button
+            onClick={isPlaying ? stopAudio : playAudio}
+            style={{
+              width: '32px',
+              height: '32px',
+              backgroundColor: isPlaying ? 'rgba(255, 80, 80, 0.8)' : 'rgba(0, 255, 255, 0.8)',
+              color: isPlaying ? 'white' : '#000',
+              border: 'none',
+              borderRadius: '50%',
+              cursor: 'pointer',
+              fontSize: '14px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s'
+            }}
+          >
+            {isPlaying ? '⏸' : '▶'}
+          </button>
+          <button
+            onClick={handleClose}
+            style={{
+              width: '32px',
+              height: '32px',
+              backgroundColor: 'rgba(100, 100, 100, 0.5)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '50%',
+              cursor: 'pointer',
+              fontSize: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s'
+            }}
+          >
+            ✕
+          </button>
         </div>
       </div>
+
+      {/* Visualization container */}
+      <div
+        ref={containerRef}
+        style={{
+          flex: 1,
+          width: '100%',
+          position: 'relative',
+          minHeight: '80px'
+        }}
+      />
     </div>
   );
 };
