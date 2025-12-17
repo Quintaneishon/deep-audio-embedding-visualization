@@ -54,6 +54,7 @@ export const DeckGLVisualization = ({
   const [isUploading, setIsUploading] = useState(false);
   const [toast, setToast] = useState(null);
   const fileInputRef = useRef(null);
+  const skipAutoCenterRef = useRef(false); // Flag to skip auto-centering when navigating to specific point
 
   // Log when data loads
   useEffect(() => {
@@ -78,6 +79,8 @@ export const DeckGLVisualization = ({
 
   // Calculate the center of the point cloud to properly position the camera
   useEffect(() => {
+    console.log('🔍 Auto-center useEffect triggered. Skip flag:', skipAutoCenterRef.current, 'Points:', points.length);
+    
     if (points.length > 0) {
       const sum = points.reduce((acc, point) => ({
         x: acc.x + point.position[0],
@@ -112,6 +115,14 @@ export const DeckGLVisualization = ({
 
       // Store the target zoom for navigation
       dataZoomRef.current = targetZoom;
+
+      // Skip auto-centering if we're navigating to a specific point
+      if (skipAutoCenterRef.current) {
+        console.log('✓ Skipping auto-center (navigating to specific point)');
+        return;
+      }
+      
+      console.log('Performing auto-center for all points');
 
       // Start at base zoom, then animate to target zoom
       setViewState(prev => ({
@@ -231,35 +242,18 @@ export const DeckGLVisualization = ({
       if (result.success) {
         showToast('Song uploaded successfully!', 'success');
         
-        // Refetch embeddings
+        // Wait a bit for backend to update before refetching
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Refetch embeddings - this will trigger re-projection and update points
         if (onRefetchEmbeddings) {
           console.log('Refetching embeddings...');
           const newEmbeddings = await onRefetchEmbeddings();
+          console.log('📊 Received embeddings count:', newEmbeddings?.length);
           
-          // Find the newly added song by filename
-          if (newEmbeddings && newEmbeddings.length > 0) {
-            const newSong = newEmbeddings.find(emb => emb.audio === result.filename);
-            if (newSong) {
-              console.log('Found new song:', newSong.name);
-              // Transform to point format and navigate
-              const newPoint = {
-                position: dimensiones === 3 
-                  ? [newSong.coords[0], newSong.coords[1], newSong.coords[2] || 0]
-                  : [newSong.coords[0], newSong.coords[1], 0],
-                color: getColorForGenre(newSong.tag),
-                name: newSong.name,
-                tag: newSong.tag,
-                audio: newSong.audio,
-                id: `${newSong.name}_new`
-              };
-              
-              // Navigate to the new song
-              setTimeout(() => {
-                navigateToPoint(newPoint);
-              }, 500);
-            } else {
-              console.warn('Could not find newly uploaded song in embeddings');
-            }
+          if (!newEmbeddings || newEmbeddings.length === 0) {
+            console.error('❌ No embeddings returned after refetch');
+            showToast('Failed to load updated embeddings', 'error');
           }
         }
       } else {
@@ -280,6 +274,9 @@ export const DeckGLVisualization = ({
 
   // Navigate to a specific point without playing audio
   const navigateToPoint = (point) => {
+    // Set flag to prevent auto-centering from interfering
+    skipAutoCenterRef.current = true;
+    
     setViewState(prev => ({
       ...prev,
       target: point.position,
@@ -292,6 +289,11 @@ export const DeckGLVisualization = ({
     setHoveredPoint(point);
     
     console.log('Navigated to:', point.name);
+    
+    // Reset the skip flag after navigation animation completes
+    setTimeout(() => {
+      skipAutoCenterRef.current = false;
+    }, 1500);
   };
 
   const layers = [
