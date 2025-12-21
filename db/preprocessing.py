@@ -16,6 +16,7 @@ import torch
 import gc
 from db.utils import process_model_dataset_combination
 from ML.acoustic_features import AcousticFeatureExtractor
+from evaluation.multi_tag_metrics import load_multi_label_tags_from_csv, evaluate_embeddings_with_tags
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
@@ -478,5 +479,172 @@ def compute_genre_similarity_scores():
         gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
+    
+    return results
+
+
+def compute_multi_tag_metrics():
+    """
+    Compute multi-tag evaluation metrics (Hubness and nDCG@10) using instrument and mood/theme tags.
+    
+    This function evaluates embeddings on non-genre semantic dimensions to test generalization.
+    Uses the MTG-Jamendo dataset tags (instrument and mood/theme) instead of genre.
+    
+    Returns:
+        Dictionary with multi-tag metrics for each model/dataset combination:
+        - hubness_skewness: Measure of hubness problem in embedding space
+        - ndcg@10_combined: nDCG@10 using both instrument and mood tags
+        - ndcg@10_instrument: nDCG@10 using only instrument tags
+        - ndcg@10_mood: nDCG@10 using only mood/theme tags
+        - n_samples_evaluated: Number of tracks with tags
+    """
+    print("\n" + "=" * 60)
+    print("COMPUTING MULTI-TAG EVALUATION METRICS")
+    print("(Hubness & nDCG@10 with Instrument/Mood Tags)")
+    print("=" * 60)
+    
+    # Check for MTG-Jamendo tag CSV
+    mtg_csv_path = Path(config.PROJECT_ROOT) / 'audio_mtg' / 'selected_songs_mtg.csv'
+    if not mtg_csv_path.exists():
+        print(f"Error: MTG tag CSV not found at {mtg_csv_path}")
+        print("Please run select_songs_mtg.py first to extract MTG-Jamendo songs.")
+        return {}
+    
+    print(f"\nLoading multi-tag mappings from: {mtg_csv_path}")
+    
+    # Load tags from CSV
+    track_ids, instrument_tags, mood_tags = load_multi_label_tags_from_csv(str(mtg_csv_path))
+    
+    print(f"Loaded {len(track_ids)} tracks with instrument/mood tags")
+    
+    # Count tag coverage
+    n_with_instrument = sum(1 for tid in track_ids if len(instrument_tags[tid]) > 0)
+    n_with_mood = sum(1 for tid in track_ids if len(mood_tags[tid]) > 0)
+    n_with_both = sum(1 for tid in track_ids if len(instrument_tags[tid]) > 0 and len(mood_tags[tid]) > 0)
+    
+    print(f"  Tracks with instrument tags: {n_with_instrument}")
+    print(f"  Tracks with mood tags: {n_with_mood}")
+    print(f"  Tracks with both: {n_with_both}")
+    
+    # Create filename to track_id mapping
+    filename_to_track_id = {}
+    with open(mtg_csv_path, 'r', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            filename_to_track_id[row['filename']] = row['track_id']
+    
+    results = {}
+    
+    # Build model/dataset combinations for convolutional models
+    conv_model_dataset_combinations = [(m, d) for m in config.CONV_MODELS for d in config.DATASETS]
+    
+    # Process convolutional model/dataset combinations
+    for model, dataset in conv_model_dataset_combinations:
+        combo_key = f"{model}_{dataset}"
+        print(f"\n--- Processing {combo_key} ---")
+        
+        # Get embeddings for tracks in the MTG CSV
+        embeddings_list = []
+        valid_track_ids = []
+        
+        for filename in filename_to_track_id.keys():
+            track_record = database.get_track_by_filename(filename)
+            if track_record is None:
+                continue
+            
+            # Get embedding
+            embedding_record = database.get_embedding(track_record['id'], model, dataset)
+            if embedding_record is None or embedding_record['embedding'] is None:
+                continue
+            
+            embeddings_list.append(embedding_record['embedding'])
+            valid_track_ids.append(filename_to_track_id[filename])
+        
+        if len(embeddings_list) == 0:
+            print(f"  No embeddings found for {combo_key}, skipping...")
+            continue
+        
+        # Convert to numpy array
+        import numpy as np
+        embeddings_array = np.vstack(embeddings_list)
+        
+        print(f"  Evaluating {len(embeddings_array)} embeddings...")
+        
+        # Evaluate
+        metrics = evaluate_embeddings_with_tags(
+            embeddings_array,
+            valid_track_ids,
+            instrument_tags,
+            mood_tags,
+            k=10
+        )
+        
+        if metrics:
+            results[combo_key] = metrics
+            print(f"  ✓ Hubness: {metrics['hubness_skewness']:.4f}")
+            print(f"  ✓ nDCG@10 (combined): {metrics['ndcg@10_combined']:.4f}")
+        
+        # Cleanup
+        del embeddings_list, embeddings_array
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+    
+    # Process transformer models
+    for i, model in enumerate(config.TRANF_MODELS):
+        model_size = config.MODEL_SIZES[i]
+        combo_key = f"{model}_{model_size}"
+        print(f"\n--- Processing {combo_key} ---")
+        
+        # Get embeddings for tracks in the MTG CSV
+        embeddings_list = []
+        valid_track_ids = []
+        
+        for filename in filename_to_track_id.keys():
+            track_record = database.get_track_by_filename(filename)
+            if track_record is None:
+                continue
+            
+            # Get embedding
+            embedding_record = database.get_embedding(track_record['id'], model, model_size)
+            if embedding_record is None or embedding_record['embedding'] is None:
+                continue
+            
+            embeddings_list.append(embedding_record['embedding'])
+            valid_track_ids.append(filename_to_track_id[filename])
+        
+        if len(embeddings_list) == 0:
+            print(f"  No embeddings found for {combo_key}, skipping...")
+            continue
+        
+        # Convert to numpy array
+        import numpy as np
+        embeddings_array = np.vstack(embeddings_list)
+        
+        print(f"  Evaluating {len(embeddings_array)} embeddings...")
+        
+        # Evaluate
+        metrics = evaluate_embeddings_with_tags(
+            embeddings_array,
+            valid_track_ids,
+            instrument_tags,
+            mood_tags,
+            k=10
+        )
+        
+        if metrics:
+            results[combo_key] = metrics
+            print(f"  ✓ Hubness: {metrics['hubness_skewness']:.4f}")
+            print(f"  ✓ nDCG@10 (combined): {metrics['ndcg@10_combined']:.4f}")
+        
+        # Cleanup
+        del embeddings_list, embeddings_array
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+    
+    print("\n" + "=" * 60)
+    print(f"Multi-tag evaluation complete! Processed {len(results)} model/dataset combinations.")
+    print("=" * 60)
     
     return results

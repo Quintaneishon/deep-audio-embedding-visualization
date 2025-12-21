@@ -248,6 +248,71 @@ def compute_genre_similarity_command():
         
         click.echo(f'Report saved to: {output_file}')
 
+
+@app.cli.command('compute-multi-tag-metrics')
+def compute_multi_tag_metrics_command():
+    """Compute multi-tag evaluation metrics (Hubness and nDCG@10) using instrument and mood/theme tags."""
+    with app.app_context():
+        click.echo('Computing multi-tag evaluation metrics...')
+        click.echo('This uses instrument and mood/theme tags (not genre) to evaluate generalization.')
+        
+        results = preprocessing.compute_multi_tag_metrics()
+        
+        if not results:
+            click.echo('No results generated. Make sure you have:')
+            click.echo('  1. Run select_songs_mtg.py to extract MTG-Jamendo songs')
+            click.echo('  2. Preprocessed embeddings for those songs')
+            return
+        
+        # Create reports directory if it doesn't exist
+        reports_dir = os.path.join(os.path.dirname(__file__), '../reports')
+        os.makedirs(reports_dir, exist_ok=True)
+        
+        # Generate filename
+        output_file = os.path.join(reports_dir, f'multi_tag_metrics_report.txt')
+        
+        # Write results to file
+        with open(output_file, 'w') as f:
+            f.write('=== Multi-Tag Evaluation Metrics Report ===\n')
+            f.write('Evaluation using Instrument and Mood/Theme Tags\n')
+            f.write(f'Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n')
+            f.write('\n' + '='*60 + '\n\n')
+            
+            f.write('METRICS EXPLANATION:\n')
+            f.write('- Hubness (Skewness): Measures concentration of nearest neighbors\n')
+            f.write('  Lower is better (<0.2 is good, <0.5 acceptable)\n')
+            f.write('- nDCG@10: Normalized Discounted Cumulative Gain at k=10\n')
+            f.write('  Higher is better (0-1 range)\n')
+            f.write('  Measures tag-based retrieval quality\n')
+            f.write('\n' + '='*60 + '\n\n')
+            
+            for combo_key, metrics in results.items():
+                f.write(f'{combo_key}:\n')
+                f.write(f'  Samples evaluated: {metrics["n_samples_evaluated"]}\n')
+                f.write(f'    With instrument tags: {metrics["n_with_instrument"]}\n')
+                f.write(f'    With mood tags: {metrics["n_with_mood"]}\n')
+                f.write('\n')
+                f.write(f'  HUBNESS (Skewness):\n')
+                f.write(f'    Skewness: {metrics["hubness_skewness"]:.4f}\n')
+                f.write(f'    Mean k-occurrence: {metrics["mean_k_occurrence"]:.2f}\n')
+                f.write(f'    Max k-occurrence: {metrics["max_k_occurrence"]:.0f}\n')
+                f.write('\n')
+                f.write(f'  nDCG@10 (Tag-based Retrieval):\n')
+                f.write(f'    Combined (Instrument + Mood): {metrics["ndcg@10_combined"]:.4f}\n')
+                f.write(f'    Instrument only: {metrics["ndcg@10_instrument"]:.4f}\n')
+                f.write(f'    Mood/Theme only: {metrics["ndcg@10_mood"]:.4f}\n')
+                f.write('\n' + '-'*60 + '\n\n')
+        
+        click.echo(f'\n✓ Report saved to: {output_file}')
+        click.echo(f'✓ Evaluated {len(results)} model/dataset combinations')
+        
+        # Print summary to console
+        click.echo('\n=== SUMMARY ===')
+        for combo_key, metrics in results.items():
+            click.echo(f'{combo_key}:')
+            click.echo(f'  Hubness: {metrics["hubness_skewness"]:.4f}  |  nDCG@10: {metrics["ndcg@10_combined"]:.4f}')
+
+
 @app.cli.command('clean-db')
 @click.option('--drop-tables', is_flag=True, default=False, help='Drop all tables before cleaning')
 def clean_db_command(drop_tables):
