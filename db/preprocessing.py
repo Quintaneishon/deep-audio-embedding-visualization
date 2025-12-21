@@ -11,7 +11,7 @@ from pathlib import Path
 from tqdm import tqdm
 import config
 import database
-from main import embeddings_y_taggrams_MusiCNN, embeddings_y_taggrams_VGG, embeddings_y_taggrams_Whisper, embeddings_y_taggrams_MERT, embeddings_y_taggrams_WhisperContrastive, embeddings_y_taggrams_VGGish
+from main import embeddings_y_taggrams_MusiCNN, embeddings_y_taggrams_VGG, embeddings_y_taggrams_Whisper, embeddings_y_taggrams_MERT, embeddings_y_taggrams_WhisperContrastive, embeddings_y_taggrams_VGGish, embeddings_y_taggrams_LightweightAdapter
 import torch
 import gc
 from db.utils import process_model_dataset_combination
@@ -154,6 +154,14 @@ def extract_embeddings_for_track(track_id, model, dataset):
             )
         elif model == 'vggish':
             embeddings, taggrams = embeddings_y_taggrams_VGGish(
+                weights_path, audio_path
+            )
+        elif model == 'lightweight_adapter_v1':
+            embeddings, taggrams = embeddings_y_taggrams_LightweightAdapter(
+                weights_path, audio_path
+            )
+        elif model == 'lightweight_adapter_v2':
+            embeddings, taggrams = embeddings_y_taggrams_LightweightAdapter(
                 weights_path, audio_path
             )
         else:

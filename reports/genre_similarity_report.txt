@@ -1,5 +1,5 @@
 === Genre Similarity Analysis Report ===
-Generated: 2025-12-17 12:12:31
+Generated: 2025-12-21 08:33:13
 
 === Summary ===
 
@@ -14,7 +14,7 @@ musicnn_msd:
   MAP@10 (K-NEAREST NEIGHBORS):
     Songs evaluated: 1000
     Genre Precision: 0.4629
-    Physical Error: 0.2965
+    Physical Error: 0.3008
 
 musicnn_mtat:
   Songs analyzed: 1000
@@ -27,7 +27,7 @@ musicnn_mtat:
   MAP@10 (K-NEAREST NEIGHBORS):
     Songs evaluated: 1000
     Genre Precision: 0.4006
-    Physical Error: 0.2901
+    Physical Error: 0.2940
 
 vgg_msd:
   Songs analyzed: 1000
@@ -39,8 +39,8 @@ vgg_msd:
     Agreement rate: 53.00%
   MAP@10 (K-NEAREST NEIGHBORS):
     Songs evaluated: 1000
-    Genre Precision: 0.4728
-    Physical Error: 0.3015
+    Genre Precision: 0.4727
+    Physical Error: 0.3062
 
 vgg_mtat:
   Songs analyzed: 1000
@@ -53,7 +53,7 @@ vgg_mtat:
   MAP@10 (K-NEAREST NEIGHBORS):
     Songs evaluated: 1000
     Genre Precision: 0.2635
-    Physical Error: 0.2799
+    Physical Error: 0.2818
 
 whisper_base:
   Songs analyzed: 1000
@@ -61,12 +61,12 @@ whisper_base:
     Mean similarity to own genre: 0.9594
     Agreement rate: 38.60%
   TAGGRAM-BASED:
-    Mean similarity to own genre: 0.8633
+    Mean similarity to own genre: 0.8634
     Agreement rate: 66.80%
   MAP@10 (K-NEAREST NEIGHBORS):
     Songs evaluated: 1000
     Genre Precision: 0.3713
-    Physical Error: 0.3170
+    Physical Error: 0.3212
 
 mert_95m:
   Songs analyzed: 1000
@@ -74,12 +74,12 @@ mert_95m:
     Mean similarity to own genre: 0.8884
     Agreement rate: 50.10%
   TAGGRAM-BASED:
-    Mean similarity to own genre: 0.9876
-    Agreement rate: 27.30%
+    Mean similarity to own genre: 0.9879
+    Agreement rate: 27.50%
   MAP@10 (K-NEAREST NEIGHBORS):
     Songs evaluated: 1000
     Genre Precision: 0.2796
-    Physical Error: 0.3254
+    Physical Error: 0.3288
 
 whisper_contrastive_base:
   Songs analyzed: 1000
@@ -87,12 +87,12 @@ whisper_contrastive_base:
     Mean similarity to own genre: 0.9693
     Agreement rate: 51.20%
   TAGGRAM-BASED:
-    Mean similarity to own genre: 0.8633
+    Mean similarity to own genre: 0.8634
     Agreement rate: 66.80%
   MAP@10 (K-NEAREST NEIGHBORS):
     Songs evaluated: 1000
     Genre Precision: 0.3852
-    Physical Error: 0.3123
+    Physical Error: 0.3177
 
 vggish_pretrained:
   Songs analyzed: 1000
@@ -100,9 +100,35 @@ vggish_pretrained:
     Mean similarity to own genre: 0.9967
     Agreement rate: 20.60%
   TAGGRAM-BASED:
-    Mean similarity to own genre: 0.0892
-    Agreement rate: 27.50%
+    Mean similarity to own genre: 0.0813
+    Agreement rate: 25.80%
   MAP@10 (K-NEAREST NEIGHBORS):
     Songs evaluated: 1000
-    Genre Precision: 0.1672
-    Physical Error: 0.3443
+    Genre Precision: 0.1671
+    Physical Error: 0.3498
+
+lightweight_adapter_v1_base:
+  Songs analyzed: 1000
+  EMBEDDING-BASED:
+    Mean similarity to own genre: 0.9804
+    Agreement rate: 46.80%
+  TAGGRAM-BASED:
+    Mean similarity to own genre: 0.9694
+    Agreement rate: 45.70%
+  MAP@10 (K-NEAREST NEIGHBORS):
+    Songs evaluated: 1000
+    Genre Precision: 0.3658
+    Physical Error: 0.1661
+
+lightweight_adapter_v2_base:
+  Songs analyzed: 1000
+  EMBEDDING-BASED:
+    Mean similarity to own genre: 0.9811
+    Agreement rate: 47.60%
+  TAGGRAM-BASED:
+    Mean similarity to own genre: 0.9484
+    Agreement rate: 52.10%
+  MAP@10 (K-NEAREST NEIGHBORS):
+    Songs evaluated: 1000
+    Genre Precision: 0.3709
+    Physical Error: 0.1689

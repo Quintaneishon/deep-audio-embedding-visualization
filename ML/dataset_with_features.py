@@ -162,16 +162,38 @@ class MTGJamendoDatasetWithFeatures(MTGJamendoDataset):
         
         try:
             with h5py.File(self.feature_cache_file, 'r') as f:
-                if filename not in f:
+                # Try to find the file in cache, checking both .mp3 and .low.mp3 variants
+                cache_key = None
+                if filename in f:
+                    cache_key = filename
+                elif filename.endswith('.mp3') and not filename.endswith('.low.mp3'):
+                    # Try .low.mp3 variant
+                    filename_low = filename.replace('.mp3', '.low.mp3')
+                    if filename_low in f:
+                        cache_key = filename_low
+                
+                if cache_key is None:
                     # Fall back to on-the-fly extraction
                     print(f"Warning: {filename} not in cache, extracting on-the-fly")
+                    
+                    # Construct full audio path and check for .low.mp3 variant
                     audio_path = self.audio_dir / path
+                    if not audio_path.exists():
+                        # Try with .low.mp3 extension
+                        audio_path_low = self.audio_dir / path.replace('.mp3', '.low.mp3')
+                        if audio_path_low.exists():
+                            audio_path = audio_path_low
+                        else:
+                            print(f"Error: Audio file not found: {audio_path} or {audio_path_low}")
+                            return torch.zeros(6)
+                    
                     features = self.feature_extractor.extract_features(
                         str(audio_path),
                         normalize=True
                     )
                 else:
-                    features = torch.tensor(f[filename][:], dtype=torch.float32)
+                    # Load from cache
+                    features = torch.tensor(f[cache_key][:], dtype=torch.float32)
                     
                     # Normalize if stats are available
                     if self.feature_extractor.feature_mean is not None:

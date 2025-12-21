@@ -190,8 +190,6 @@ class AcousticFeatureExtractor:
         
         self.feature_mean = torch.tensor(stats['feature_mean'], dtype=torch.float32)
         self.feature_std = torch.tensor(stats['feature_std'], dtype=torch.float32)
-        
-        print(f"Normalization statistics loaded from {filepath}")
     
     def cache_features(self, audio_files, cache_file):
         """

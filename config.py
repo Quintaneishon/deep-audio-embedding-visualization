@@ -19,8 +19,8 @@ MODEL_DIR = str(PROJECT_ROOT / 'ML' / 'models')
 CONV_MODELS = ['musicnn', 'vgg']
 DATASETS = ['msd', 'mtat']
 
-TRANF_MODELS = ['whisper', 'mert', 'whisper_contrastive', 'vggish']
-MODEL_SIZES = ['base', '95m', 'base', 'pretrained']
+TRANF_MODELS = ['whisper', 'mert', 'whisper_contrastive', 'vggish', 'lightweight_adapter_v1','lightweight_adapter_v2']
+MODEL_SIZES = ['base', '95m', 'base', 'pretrained', 'base', 'base']
 
 # Model weight paths (absolute paths)
 MODEL_WEIGHTS = {
@@ -43,6 +43,12 @@ MODEL_WEIGHTS = {
     },
     'vggish': {
         'pretrained': 'vggish-10086976.pth'
+    },
+    'lightweight_adapter_v1': {
+        'base': str(PROJECT_ROOT / 'ML' / 'checkpoints' / 'lightweight_adapter_20251217_142925/best_model.pth')
+    },
+    'lightweight_adapter_v2': {
+        'base': str(PROJECT_ROOT / 'ML' / 'checkpoints' / 'lightweight_adapter_20251218_050912/best_model.pth')
     }
 }
 

@@ -11,8 +11,7 @@ from models.VGGish import VGGish
 from models.Whisper import WhisperEmbedding, pad_or_trim, log_mel_spectrogram
 from models.MERT import MERTEmbedding, resample_audio
 from models.WhisperContrastive import WhisperContrastive
-from proyecciones import proyectar_embeddings
-import torchaudio
+from models.LightweightAdapter import LightweightAdapter
 import config
 
 MSD_W_MUSICNN = './pesos/msd/musicnn.pth'
@@ -308,3 +307,127 @@ def embeddings_y_taggrams_VGGish(model_name, audio, sr=SR_MUSICNN):
     taggrams = taggrams.reshape(1, -1)      # (1, n_tags)
     
     return embeddings, taggrams
+
+
+def embeddings_y_taggrams_LightweightAdapter(pesos, audio, feature_stats_path=None, model_name='base', 
+                                            output_dim=128, sr=SR_MUSICNN):
+    """
+    Extract embeddings and taggrams from full audio using trained LightweightAdapter model.
+    
+    This function works with both v1 (frozen early layers) and v2 (fine-tuned early layers) models.
+    The model configuration is automatically loaded from the checkpoint.
+    
+    Architecture layers:
+    - Embeddings: Penultimate layer (544-dim) = Whisper features + projected acoustic features
+    - Taggrams: Final dense layer (128-dim) = Fusion layer output before L2 normalization
+    
+    Args:
+        pesos: Path to trained model checkpoint (.pth file)
+        audio: Path to audio file
+        feature_stats_path: Path to feature normalization stats JSON (if None, looks in checkpoint dir)
+        model_name: Whisper model name ('tiny', 'base', 'small') - should match training
+        output_dim: Output embedding dimension (default: 128)
+        sr: Sample rate (should be 16000)
+    
+    Returns:
+        embeddings: (1, 544) - Penultimate layer (Whisper + acoustic features concatenated)
+        taggrams: (1, 128) - Final dense layer output (before L2 normalization)
+    """
+    from pathlib import Path
+    from acoustic_features import AcousticFeatureExtractor
+    
+    # Load checkpoint to get model configuration
+    checkpoint = torch.load(pesos, map_location=DC)
+    model_config = checkpoint.get('model_config', {})
+    
+    # Extract configuration from checkpoint
+    feature_dim = model_config.get('feature_dim', 6)
+    projection_dim = model_config.get('projection_dim', 32)
+    output_dim = model_config.get('output_dim', output_dim)
+    model_name = model_config.get('model_name', model_name)
+    
+    # Determine feature stats path if not provided
+    if feature_stats_path is None:
+        # Try to find feature_stats.json in the checkpoint directory
+        checkpoint_dir = Path(pesos).parent
+        feature_stats_path = checkpoint_dir / 'feature_stats.json'
+        if not feature_stats_path.exists():
+            # Fall back to default location
+            feature_stats_path = Path(config.PROJECT_ROOT) / 'ML' / 'features_cache' / 'feature_stats.json'
+    
+    # Create LightweightAdapter model (configuration will be loaded from checkpoint)
+    # Note: num_transformer_layers and finetune_early_layers don't affect inference
+    # since we're loading trained weights
+    model = LightweightAdapter(
+        model_name=model_name,
+        feature_dim=feature_dim,
+        projection_dim=projection_dim,
+        output_dim=output_dim,
+        device=DC,
+        feature_stats_path=str(feature_stats_path) if feature_stats_path.exists() else None,
+        num_transformer_layers=2,  # Default for loading
+        finetune_early_layers=False  # Doesn't matter for inference
+    )
+    
+    # Load trained weights
+    model.load_state_dict(checkpoint['model_state_dict'])
+    model.to(DC)
+    model.eval()
+    
+    # Initialize feature extractor for extracting acoustic features
+    feature_extractor = AcousticFeatureExtractor(sample_rate=sr)
+    if feature_stats_path and Path(feature_stats_path).exists():
+        feature_extractor.load_stats(str(feature_stats_path))
+
+    # Load full audio at 16kHz
+    y, _ = load_audio_safe(audio, sr=sr)
+    
+    # Process entire song at once
+    with torch.no_grad():
+        x = torch.from_numpy(y).float().unsqueeze(0).to(DC)
+        
+        # Extract acoustic features (6-dim)
+        features = feature_extractor.extract_batch(x, normalize=True)
+        features = features.to(DC)
+        
+        # === EXTRACT EMBEDDINGS (PENULTIMATE LAYER) ===
+        # Process through early Whisper layers
+        batch_size = x.shape[0]
+        mel_list = []
+        for i in range(batch_size):
+            audio_padded = pad_or_trim(x[i].cpu().numpy())
+            mel = log_mel_spectrogram(audio_padded, n_mels=model.n_mels)
+            mel_list.append(mel)
+        
+        mel = torch.stack(mel_list).to(DC)
+        
+        # Extract early layer features
+        if model.finetune_early_layers:
+            early_features = model.extract_early_layer_features(mel)
+        else:
+            with torch.no_grad():
+                early_features = model.extract_early_layer_features(mel)
+        
+        # Average pooling to get Whisper embedding
+        whisper_emb = torch.mean(early_features, dim=1)  # [batch, n_audio_state=512]
+        
+        # Project acoustic features
+        features_projected = model.feature_projection(features)  # [batch, projection_dim=32]
+        
+        # Concatenate - THIS IS THE EMBEDDINGS (PENULTIMATE LAYER)
+        embeddings_penultimate = torch.cat([whisper_emb, features_projected], dim=1)  # [batch, 544]
+        
+        # === EXTRACT TAGGRAMS (FINAL DENSE LAYER) ===
+        # Apply fusion layer (before L2 normalization)
+        taggrams_final_dense = model.fusion(embeddings_penultimate)  # [batch, output_dim=128]
+        
+        # Convert to numpy
+        embeddings = embeddings_penultimate.squeeze(0).cpu().numpy()
+        taggrams = taggrams_final_dense.squeeze(0).cpu().numpy()
+    
+    # Reshape to (1, dim) for consistency with downstream code
+    embeddings = embeddings.reshape(1, -1)  # (1, 544) - Penultimate layer
+    taggrams = taggrams.reshape(1, -1)      # (1, 128) - Final dense layer
+    
+    return embeddings, taggrams
+
